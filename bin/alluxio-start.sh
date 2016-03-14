@@ -98,6 +98,8 @@ start_master() {
     $LAUNCHER ${BIN}/alluxio format
   fi
 
+  ALLUXIO_MASTER_JAVA_OPTS="$ALLUXIO_MASTER_JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+
   echo "Starting master @ $MASTER_ADDRESS. Logging to $ALLUXIO_LOGS_DIR"
   (nohup $JAVA -cp $CLASSPATH \
    -Dalluxio.home=$ALLUXIO_HOME \
@@ -120,6 +122,9 @@ start_worker() {
     ALLUXIO_WORKER_JAVA_OPTS=$ALLUXIO_JAVA_OPTS
   fi
 
+  ALLUXIO_WORKER_JAVA_OPTS="$ALLUXIO_WORKER_JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006"
+  echo $ALLUXIO_WORKER_JAVA_OPTS
+
   echo "Starting worker @ $(hostname -f). Logging to $ALLUXIO_LOGS_DIR"
   (nohup $JAVA -cp $CLASSPATH \
    -Dalluxio.home=$ALLUXIO_HOME \
@@ -135,6 +140,8 @@ restart_worker() {
   if [[ -z $ALLUXIO_WORKER_JAVA_OPTS ]]; then
     ALLUXIO_WORKER_JAVA_OPTS=$ALLUXIO_JAVA_OPTS
   fi
+
+  ALLUXIO_WORKER_JAVA_OPTS="$ALLUXIO_WORKER_JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006"
 
   RUN=$(ps -ef | grep "alluxio.worker.AlluxioWorker" | grep "java" | wc | cut -d" " -f7)
   if [[ $RUN -eq 0 ]]; then

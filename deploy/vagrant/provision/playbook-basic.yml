@@ -5,5 +5,10 @@
 - name: install necessary packages
   hosts: all
   tasks:
+    # changed by Nelson
     - include: roles/common/tasks/pkg.yml
     - include: roles/lib/tasks/maven.yml
+    - include: roles/lib/tasks/client_lib.yml
+
+    #- include: roles/common/tasks/pkg.yml
+    #- include: roles/lib/tasks/maven.yml

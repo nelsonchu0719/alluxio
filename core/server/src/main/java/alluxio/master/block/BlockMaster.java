@@ -554,7 +554,7 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
 
         // Detect any lost blocks on this worker.
         Set<Long> removedBlocks = workerInfo.register(mGlobalStorageTierAssoc, storageTiers,
-            totalBytesOnTiers, usedBytesOnTiers, blocks);
+                totalBytesOnTiers, usedBytesOnTiers, blocks);
 
         processWorkerRemovedBlocks(workerInfo, removedBlocks);
         processWorkerAddedBlocks(workerInfo, currentBlocksOnTiers);
@@ -608,6 +608,7 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
   private void processWorkerRemovedBlocks(MasterWorkerInfo workerInfo,
       Collection<Long> removedBlockIds) {
     for (long removedBlockId : removedBlockIds) {
+      workerInfo.removeBlock(removedBlockId);
       MasterBlockInfo masterBlockInfo = mBlocks.get(removedBlockId);
       if (masterBlockInfo == null) {
         LOG.warn("Worker {} removed block {} but block does not exist.", workerInfo.getId(),
@@ -616,7 +617,6 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
         continue;
       }
       LOG.info("Block {} is removed on worker {}.", removedBlockId, workerInfo.getId());
-      workerInfo.removeBlock(masterBlockInfo.getBlockId());
       masterBlockInfo.removeWorker(workerInfo.getId());
       if (masterBlockInfo.getNumLocations() == 0) {
         mLostBlocks.add(removedBlockId);

@@ -15,6 +15,7 @@ def config_vb(config, i, total, name, alluxio_is_local)
 
   if alluxio_is_local
     config.vm.synced_folder "../../", "/alluxio"
+    config.vm.synced_folder "../../../AlluxioBasicIOTest/", "/AlluxioBasicIOTest"
   end
 
   config.vm.box = "alluxio-dev"
@@ -27,6 +28,7 @@ def config_vb(config, i, total, name, alluxio_is_local)
   end
 
   config.vm.network "private_network", type: "dhcp"
+  #config.vm.network "public_network", type: "dhcp", :bridge => "en0: Wi-Fi (AirPort)"
 
   config.ssh.insert_key = false
 end

@@ -130,7 +130,8 @@ for host in $(cat files/workers); do
 done
 
 # provision
-vagrant provision
+# No more provision, finish what needed already, added by Nelson
+ vagrant provision
 
 # IP aliasing
 # For AWS, file ".vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory"
