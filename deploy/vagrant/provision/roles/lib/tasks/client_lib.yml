@@ -1,0 +1,3 @@
+# added by Nelson
+- name: install client dependencies
+  script: client_lib.sh
