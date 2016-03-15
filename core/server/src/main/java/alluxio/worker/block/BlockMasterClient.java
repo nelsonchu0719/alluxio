@@ -20,6 +20,8 @@ import alluxio.thrift.AlluxioService;
 import alluxio.thrift.AlluxioTException;
 import alluxio.thrift.BlockMasterWorkerService;
 import alluxio.thrift.Command;
+import alluxio.wire.ThriftUtils;
+import alluxio.wire.WorkerInfo;
 import alluxio.wire.WorkerNetAddress;
 
 import org.apache.thrift.TException;
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -159,6 +162,27 @@ public final class BlockMasterClient extends AbstractMasterClient {
         mClient.registerWorker(workerId, storageTierAliases, totalBytesOnTiers, usedBytesOnTiers,
             currentBlocksOnTiers);
         return null;
+      }
+    });
+  }
+
+  /**
+   * Gets the info of a list of workers.
+   *
+   * @return A list of worker info returned by master
+   * @throws IOException if an I/O error occurs
+   * @throws ConnectionFailedException if network connection failed
+   */
+  public synchronized List<WorkerInfo> getWorkerInfoList()
+          throws IOException, ConnectionFailedException {
+    return retryRPC(new RpcCallable<List<WorkerInfo>>() {
+      @Override
+      public List<WorkerInfo> call() throws TException {
+        List<WorkerInfo> result = new ArrayList<WorkerInfo>();
+        for (alluxio.thrift.WorkerInfo workerInfo : mClient.getWorkerInfoList()) {
+          result.add(ThriftUtils.fromThrift(workerInfo));
+        }
+        return result;
       }
     });
   }

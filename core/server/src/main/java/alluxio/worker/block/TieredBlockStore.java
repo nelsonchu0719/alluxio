@@ -15,7 +15,11 @@ import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.StorageTierAssoc;
 import alluxio.WorkerStorageTierAssoc;
+import alluxio.client.block.BlockWorkerInfo;
+import alluxio.client.file.policy.FileWriteLocationPolicy;
+import alluxio.client.file.policy.MostAvailableFirstPolicy;
 import alluxio.collections.Pair;
+import alluxio.exception.AlluxioException;
 import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.BlockDoesNotExistException;
 import alluxio.exception.ExceptionMessage;
@@ -23,6 +27,8 @@ import alluxio.exception.InvalidWorkerStateException;
 import alluxio.exception.WorkerOutOfSpaceException;
 import alluxio.util.io.FileUtils;
 import alluxio.util.io.PathUtils;
+import alluxio.wire.WorkerNetAddress;
+import alluxio.worker.AlluxioWorker;
 import alluxio.worker.WorkerContext;
 import alluxio.worker.block.allocator.Allocator;
 import alluxio.worker.block.evictor.BlockTransferInfo;
@@ -619,7 +625,7 @@ public final class TieredBlockStore implements BlockStore {
       // Increase the size of this temp block
       try {
         mMetaManager.resizeTempBlockMeta(tempBlockMeta,
-            tempBlockMeta.getBlockSize() + additionalBytes);
+                tempBlockMeta.getBlockSize() + additionalBytes);
       } catch (InvalidWorkerStateException e) {
         throw Throwables.propagate(e); // we shall never reach here
       }
@@ -653,6 +659,11 @@ public final class TieredBlockStore implements BlockStore {
       mMetadataReadLock.unlock();
     }
 
+    // TODO
+    // Remember to use an extra argument in the RPC request to distinguish user
+    // write request and evict writer request
+
+    /*
     // 1. remove blocks to make room.
     for (Pair<Long, BlockStoreLocation> blockInfo : plan.toEvict()) {
       try {
@@ -671,6 +682,28 @@ public final class TieredBlockStore implements BlockStore {
         }
       }
     }
+    */
+
+    // Instead of remove blocks, evict block to peer workers
+    // Added by Nelson
+    for (Pair<Long, BlockStoreLocation> blockInfo : plan.toEvict()) {
+      try {
+        evictBlockInternal(sessionId, blockInfo.getFirst(), blockInfo.getSecond());
+      } catch (InvalidWorkerStateException e) {
+        // Evictor is not working properly
+        LOG.error("Failed to evict blockId {}, this is temp block", blockInfo.getFirst());
+        continue;
+      } catch (BlockDoesNotExistException e) {
+        LOG.info("Failed to evict blockId {}, it could be already deleted", blockInfo.getFirst());
+        continue;
+      }
+      synchronized (mBlockStoreEventListeners) {
+        for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
+          listener.onRemoveBlockByWorker(sessionId, blockInfo.getFirst());
+        }
+      }
+    }
+
     // 2. transfer blocks among tiers.
     // 2.1. group blocks move plan by the destination tier.
     Map<String, Set<BlockTransferInfo>> blocksGroupedByDestTier =
@@ -863,6 +896,73 @@ public final class TieredBlockStore implements BlockStore {
       } finally {
         mMetadataWriteLock.unlock();
       }
+    } finally {
+      mLockManager.unlockBlock(lockId);
+    }
+  }
+
+  /**
+   * Evicts a block to peer worker.
+   * Added by Nelson
+   *
+   * @param sessionId session Id
+   * @param blockId block Id
+   * @param location the source location of the block
+   * @throws InvalidWorkerStateException if the block to remove is a temp block
+   * @throws BlockDoesNotExistException if this block can not be found
+   * @throws WorkerOutOfSpaceException if this block cannot be evicted to other worker
+   * @throws IOException if I/O errors occur when removing this block file
+   */
+  private void evictBlockInternal(long sessionId, long blockId, BlockStoreLocation location)
+          throws InvalidWorkerStateException, BlockDoesNotExistException,
+          WorkerOutOfSpaceException, IOException {
+    long lockId = mLockManager.lockBlock(sessionId, blockId, BlockLockType.WRITE);
+    try {
+      String filePath;
+      BlockMeta blockMeta;
+      mMetadataReadLock.lock();
+      try {
+        if (mMetaManager.hasTempBlockMeta(blockId)) {
+          throw new InvalidWorkerStateException(ExceptionMessage.REMOVE_UNCOMMITTED_BLOCK, blockId);
+        }
+        blockMeta = mMetaManager.getBlockMeta(blockId);
+        filePath = blockMeta.getPath();
+      } finally {
+        mMetadataReadLock.unlock();
+      }
+
+      if (!blockMeta.getBlockLocation().belongsTo(location)) {
+        throw new BlockDoesNotExistException(ExceptionMessage.BLOCK_NOT_FOUND_AT_LOCATION, blockId,
+                location);
+      }
+
+      // TODO(Nelson) evict block to other worker here
+
+      // Get workerInfoList from master
+      // Get the target worker with MostAvailableFirstPolicy
+      FileWriteLocationPolicy policy = new MostAvailableFirstPolicy();
+      List<BlockWorkerInfo> workerInfos = AlluxioWorker.get().getBlockWorker().getWorkerInfoList();
+      WorkerNetAddress peerWorkerAddress = policy.getWorkerForNextBlock(workerInfos, 0);
+
+      // make a write request to new worker with NettyRemoteBlockWriter
+      // Write blocks to new worker
+      // Commit block at new worker
+      // Use instant heartbeat to inform BlockMaster the remove of blocks from this worker
+      // Do not completeFile with FileSystemMaster
+
+      // Heavy IO is guarded by block lock but not metadata lock. This may throw IOException.
+      FileUtils.delete(filePath);
+
+      mMetadataWriteLock.lock();
+      try {
+        mMetaManager.removeBlockMeta(blockMeta);
+      } catch (BlockDoesNotExistException e) {
+        throw Throwables.propagate(e); // we shall never reach here
+      } finally {
+        mMetadataWriteLock.unlock();
+      }
+    } catch (AlluxioException e) {
+      throw new IOException();
     } finally {
       mLockManager.unlockBlock(lockId);
     }

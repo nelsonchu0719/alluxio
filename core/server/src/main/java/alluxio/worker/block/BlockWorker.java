@@ -14,6 +14,7 @@ package alluxio.worker.block;
 import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.Sessions;
+import alluxio.client.block.BlockWorkerInfo;
 import alluxio.exception.AlluxioException;
 import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.BlockDoesNotExistException;
@@ -28,6 +29,7 @@ import alluxio.util.io.FileUtils;
 import alluxio.util.network.NetworkAddressUtils;
 import alluxio.util.network.NetworkAddressUtils.ServiceType;
 import alluxio.wire.FileInfo;
+import alluxio.wire.WorkerInfo;
 import alluxio.wire.WorkerNetAddress;
 import alluxio.worker.AbstractWorker;
 import alluxio.worker.WorkerContext;
@@ -39,6 +41,7 @@ import alluxio.worker.block.meta.TempBlockMeta;
 import alluxio.worker.file.FileSystemMasterClient;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import org.apache.thrift.TProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -222,6 +225,21 @@ public final class BlockWorker extends AbstractWorker {
     mFileSystemMasterClient.close();
     // Use shutdownNow because HeartbeatThreads never finish until they are interrupted
     getExecutorService().shutdownNow();
+  }
+
+  /**
+   * Gets the info of a list of workers.
+   * @return A list of worker info returned by master
+   * @throws IOException if an I/O error occurs
+   * @throws ConnectionFailedException if network connection failed
+   */
+  public List<BlockWorkerInfo> getWorkerInfoList() throws IOException, ConnectionFailedException {
+    List<BlockWorkerInfo> infoList = Lists.newArrayList();
+    for (WorkerInfo workerInfo : mBlockMasterClient.getWorkerInfoList()) {
+      infoList.add(new BlockWorkerInfo(workerInfo.getAddress(), workerInfo.getCapacityBytes(),
+              workerInfo.getUsedBytes()));
+    }
+    return infoList;
   }
 
   /**

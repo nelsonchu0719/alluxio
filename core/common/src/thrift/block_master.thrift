@@ -76,4 +76,9 @@ service BlockMasterWorkerService extends common.AlluxioService {
       /** the map of used bytes on each tier */  4: map<string, i64> usedBytesOnTiers,
       /** the map of list of blocks on each tier */  5: map<string, list<i64>> currentBlocksOnTiers)
     throws (1: exception.AlluxioTException e)
+
+  /**
+   * Returns a list of workers information.
+   */
+  list<WorkerInfo> getWorkerInfoList()
 }

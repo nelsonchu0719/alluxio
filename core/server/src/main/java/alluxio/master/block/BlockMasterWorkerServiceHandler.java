@@ -16,11 +16,14 @@ import alluxio.exception.AlluxioException;
 import alluxio.thrift.AlluxioTException;
 import alluxio.thrift.BlockMasterWorkerService;
 import alluxio.thrift.Command;
+import alluxio.thrift.WorkerInfo;
 import alluxio.thrift.WorkerNetAddress;
 import alluxio.wire.ThriftUtils;
 
 import com.google.common.base.Preconditions;
+import org.apache.thrift.TException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -63,6 +66,15 @@ public class BlockMasterWorkerServiceHandler implements BlockMasterWorkerService
     } catch (AlluxioException e) {
       throw e.toAlluxioTException();
     }
+  }
+
+  @Override
+  public List<WorkerInfo> getWorkerInfoList() throws TException {
+    List<WorkerInfo> workerInfos = new ArrayList<WorkerInfo>();
+    for (alluxio.wire.WorkerInfo workerInfo : mBlockMaster.getWorkerInfoList()) {
+      workerInfos.add(ThriftUtils.toThrift(workerInfo));
+    }
+    return workerInfos;
   }
 
   @Override
