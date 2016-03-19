@@ -31,6 +31,7 @@ public final class RPCBlockWriteRequest extends RPCRequest {
   private final long mBlockId;
   private final long mOffset;
   private final long mLength;
+  private final int mIsEviction;
   private final DataBuffer mData;
 
   /**
@@ -40,14 +41,16 @@ public final class RPCBlockWriteRequest extends RPCRequest {
    * @param blockId the id of the block
    * @param offset the block offset to begin writing at
    * @param length the number of bytes to write
+   * @param isEviction true if this request is from remote worker eviction
    * @param data the data
    */
   public RPCBlockWriteRequest(long sessionId, long blockId, long offset, long length,
-      DataBuffer data) {
+      int isEviction, DataBuffer data) {
     mSessionId = sessionId;
     mBlockId = blockId;
     mOffset = offset;
     mLength = length;
+    mIsEviction = isEviction;
     mData = data;
   }
 
@@ -67,6 +70,7 @@ public final class RPCBlockWriteRequest extends RPCRequest {
     long blockId = in.readLong();
     long offset = in.readLong();
     long length = in.readLong();
+    int isEviction = in.readInt();
     // TODO(gene): Look into accessing Netty ByteBuf directly, to avoid copying the data.
     // Length will always be greater than 0 if the request is not corrupted. If length is negative,
     // ByteBuffer.allocate will fail. If length is 0 this will become a no-op but still go through
@@ -75,13 +79,13 @@ public final class RPCBlockWriteRequest extends RPCRequest {
     ByteBuffer buffer = ByteBuffer.allocate((int) length);
     in.readBytes(buffer);
     DataByteBuffer data = new DataByteBuffer(buffer, (int) length);
-    return new RPCBlockWriteRequest(sessionId, blockId, offset, length, data);
+    return new RPCBlockWriteRequest(sessionId, blockId, offset, length, isEviction, data);
   }
 
   @Override
   public int getEncodedLength() {
     // 4 longs (mSessionId, mBlockId, mOffset, mLength)
-    return Longs.BYTES * 4;
+    return Longs.BYTES * 4 + Integer.BYTES;
   }
 
   @Override
@@ -90,6 +94,7 @@ public final class RPCBlockWriteRequest extends RPCRequest {
     out.writeLong(mBlockId);
     out.writeLong(mOffset);
     out.writeLong(mLength);
+    out.writeInt(mIsEviction);
     // The actual payload is not encoded here, since the RPCMessageEncoder will transfer it in a
     // more efficient way.
   }
@@ -131,5 +136,19 @@ public final class RPCBlockWriteRequest extends RPCRequest {
    */
   public long getOffset() {
     return mOffset;
+  }
+
+  /**
+   * @return if this data is evicted data
+   */
+  public boolean isEviction() {
+    return mIsEviction == 1;
+  }
+
+  /**
+   * @return mIsEviction, 1:true, 0:false
+   */
+  public int getEvictionBit() {
+    return mIsEviction;
   }
 }

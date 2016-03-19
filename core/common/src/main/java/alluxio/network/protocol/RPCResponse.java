@@ -34,10 +34,13 @@ public abstract class RPCResponse extends RPCMessage {
     UNEXPECTED_STATUS_CODE(1),
     DECODE_ERROR(2),
     UNKNOWN_MESSAGE_ERROR(3),
+    REMOTE_EVICTION_REJECT(4),
     // Specific errors.
     FILE_DNE(100),
     BLOCK_LOCK_ERROR(101),
-    WRITE_ERROR(102);
+    WRITE_ERROR(102),
+    // Used when caching block to worker who already have the block(Added by Nelson).
+    WRITE_ERROR_BLOCK_EXISTED(103);
 
     private static final String DEFAULT_ERROR_STRING = "Unknown error.";
     /** Mapping from short id to {@link Status}. */
@@ -112,12 +115,16 @@ public abstract class RPCResponse extends RPCMessage {
           return "Decode error. Possible Client/DataServer version incompatibility.";
         case UNKNOWN_MESSAGE_ERROR:
           return "Unknown message error. Possible Client/DataServer version incompatibility.";
+        case REMOTE_EVICTION_REJECT:
+          return "Remote worker eviction rejected. Possible insufficient space";
         case FILE_DNE:
           return "File does not exist.";
         case BLOCK_LOCK_ERROR:
           return "Failed to lock block.";
         case WRITE_ERROR:
           return "Failed to write block.";
+        case WRITE_ERROR_BLOCK_EXISTED:
+          return "Failed to write block: block already exits.";
         default:
           return DEFAULT_ERROR_STRING;
       }

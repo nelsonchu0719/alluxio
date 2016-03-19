@@ -277,6 +277,12 @@ public final class Constants {
       "alluxio.worker.evictor.lrfu.step.factor";
   public static final String WORKER_EVICTOR_LRFU_ATTENUATION_FACTOR =
       "alluxio.worker.evictor.lrfu.attenuation.factor";
+  public static final String WORKER_EVICTOR_REMOTE_EVICT_IN_MEM_BLOCKS =
+      "alluxio.worker.evictor.remote.evict.in.mem.blocks";
+  public static final String WORKER_EVICTOR_REMOTE_EVICT_PERSIST_BLOCKS_BACKGROUND =
+      "alluxio.worker.evictor.remote.evict.persist.blocks.background";
+  public static final String WORKER_EVICTOR_REMOTE_EVICT_SPACE_THRESHOLD =
+      "alluxio.worker.evictor.remote.evict.space.threshold";
   public static final String WORKER_TIERED_STORE_LEVELS =
       "alluxio.worker.tieredstore.levels";
   public static final String WORKER_FILESYSTEM_HEARTBEAT_INTERVAL_MS =

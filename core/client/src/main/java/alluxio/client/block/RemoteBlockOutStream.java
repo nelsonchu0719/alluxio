@@ -14,6 +14,7 @@ package alluxio.client.block;
 import alluxio.client.ClientContext;
 import alluxio.client.RemoteBlockWriter;
 import alluxio.exception.AlluxioException;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.wire.WorkerNetAddress;
 
 import java.io.IOException;
@@ -51,6 +52,22 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
   }
 
   /**
+   * Creates a new block output stream for remote worker eviction.
+   *
+   * @param blockId the block id
+   * @param blockSize the block size
+   * @param address the address of the preferred worker
+   * @param isEviction true if this output stream is for worker eviction
+   * @throws IOException if I/O error occurs
+   */
+  public RemoteBlockOutStream(long blockId, long blockSize, WorkerNetAddress address,
+      boolean isEviction)
+          throws IOException {
+    this(blockId, blockSize, address);
+    mRemoteWriter.setEviction(isEviction);
+  }
+
+  /**
    * Creates a new block output stream on a specific address.
    *
    * @param blockId the block id
@@ -79,10 +96,12 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
       return;
     }
     mRemoteWriter.close();
-    try {
-      mBlockWorkerClient.cancelBlock(mBlockId);
-    } catch (AlluxioException e) {
-      throw new IOException(e);
+    if (isBlockCreated()) {
+      try {
+        mBlockWorkerClient.cancelBlock(mBlockId);
+      } catch (AlluxioException e) {
+        throw new IOException(e);
+      }
     }
     mContext.releaseWorkerClient(mBlockWorkerClient);
     mClosed = true;
@@ -103,10 +122,12 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
       }
       ClientContext.getClientMetrics().incBlocksWrittenRemote(1);
     } else {
-      try {
-        mBlockWorkerClient.cancelBlock(mBlockId);
-      } catch (AlluxioException e) {
-        throw new IOException(e);
+      if (isBlockCreated()) {
+        try {
+          mBlockWorkerClient.cancelBlock(mBlockId);
+        } catch (AlluxioException e) {
+          throw new IOException(e);
+        }
       }
     }
     mContext.releaseWorkerClient(mBlockWorkerClient);
@@ -124,8 +145,14 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
     writeToRemoteBlock(b, off, len);
   }
 
-  private void writeToRemoteBlock(byte[] b, int off, int len) throws IOException {
-    mRemoteWriter.write(b, off, len);
+  private void writeToRemoteBlock(byte[] b, int off, int len)
+          throws IOException {
+    try {
+      mRemoteWriter.write(b, off, len);
+    } catch (BlockAlreadyExistsException e) {
+      setBlockCreationFailed();
+      throw new IOException(e);
+    }
     mFlushedBytes += len;
     ClientContext.getClientMetrics().incBytesWrittenRemote(len);
   }

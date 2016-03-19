@@ -15,9 +15,6 @@ import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.StorageTierAssoc;
 import alluxio.WorkerStorageTierAssoc;
-import alluxio.client.block.BlockWorkerInfo;
-import alluxio.client.file.policy.FileWriteLocationPolicy;
-import alluxio.client.file.policy.MostAvailableFirstPolicy;
 import alluxio.collections.Pair;
 import alluxio.exception.AlluxioException;
 import alluxio.exception.BlockAlreadyExistsException;
@@ -27,10 +24,9 @@ import alluxio.exception.InvalidWorkerStateException;
 import alluxio.exception.WorkerOutOfSpaceException;
 import alluxio.util.io.FileUtils;
 import alluxio.util.io.PathUtils;
-import alluxio.wire.WorkerNetAddress;
-import alluxio.worker.AlluxioWorker;
 import alluxio.worker.WorkerContext;
 import alluxio.worker.block.allocator.Allocator;
+import alluxio.worker.block.evictor.BlockMover;
 import alluxio.worker.block.evictor.BlockTransferInfo;
 import alluxio.worker.block.evictor.EvictionPlan;
 import alluxio.worker.block.evictor.Evictor;
@@ -196,6 +192,13 @@ public final class TieredBlockStore implements BlockStore {
   @Override
   public TempBlockMeta createBlockMeta(long sessionId, long blockId, BlockStoreLocation location,
       long initialBlockSize)
+          throws WorkerOutOfSpaceException, IOException, BlockAlreadyExistsException {
+    return createBlockMeta(sessionId, blockId, location, initialBlockSize, false);
+  }
+
+  @Override
+  public TempBlockMeta createBlockMeta(long sessionId, long blockId, BlockStoreLocation location,
+      long initialBlockSize, boolean isEviction)
           throws BlockAlreadyExistsException, WorkerOutOfSpaceException, IOException {
     for (int i = 0; i < MAX_RETRIES + 1; i++) {
       TempBlockMeta tempBlockMeta =
@@ -207,7 +210,7 @@ public final class TieredBlockStore implements BlockStore {
         // Failed to create a temp block, so trigger Evictor to make some space.
         // NOTE: a successful {@link freeSpaceInternal} here does not ensure the subsequent
         // allocation also successful, because these two operations are not atomic.
-        freeSpaceInternal(sessionId, initialBlockSize, location);
+        freeSpaceInternal(sessionId, initialBlockSize, location, isEviction);
       }
     }
     // TODO(bin): We are probably seeing a rare transient failure, maybe define and throw some
@@ -263,6 +266,12 @@ public final class TieredBlockStore implements BlockStore {
 
   @Override
   public void requestSpace(long sessionId, long blockId, long additionalBytes)
+          throws WorkerOutOfSpaceException, IOException, BlockDoesNotExistException {
+    requestSpace(sessionId, blockId, additionalBytes, false);
+  }
+
+  @Override
+  public void requestSpace(long sessionId, long blockId, long additionalBytes, boolean isEviction)
       throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException {
     for (int i = 0; i < MAX_RETRIES + 1; i++) {
       Pair<Boolean, BlockStoreLocation> requestResult =
@@ -271,7 +280,7 @@ public final class TieredBlockStore implements BlockStore {
         return;
       }
       if (i < MAX_RETRIES) {
-        freeSpaceInternal(sessionId, additionalBytes, requestResult.getSecond());
+        freeSpaceInternal(sessionId, additionalBytes, requestResult.getSecond(), isEviction);
       }
     }
     throw new WorkerOutOfSpaceException(ExceptionMessage.NO_SPACE_FOR_BLOCK_ALLOCATION,
@@ -302,7 +311,7 @@ public final class TieredBlockStore implements BlockStore {
         return;
       }
       if (i < MAX_RETRIES) {
-        freeSpaceInternal(sessionId, moveResult.getBlockSize(), newLocation);
+        freeSpaceInternal(sessionId, moveResult.getBlockSize(), newLocation, false);
       }
     }
     throw new WorkerOutOfSpaceException(ExceptionMessage.NO_SPACE_FOR_BLOCK_MOVE, newLocation,
@@ -345,7 +354,7 @@ public final class TieredBlockStore implements BlockStore {
   public void freeSpace(long sessionId, long availableBytes, BlockStoreLocation location)
       throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException {
     // TODO(bin): Consider whether to retry here.
-    freeSpaceInternal(sessionId, availableBytes, location);
+    freeSpaceInternal(sessionId, availableBytes, location, false);
   }
 
   @Override
@@ -642,10 +651,12 @@ public final class TieredBlockStore implements BlockStore {
    * @param sessionId the session Id
    * @param availableBytes amount of space in bytes to free
    * @param location location of space
+   * @param isEviction true if this request is from remote worker eviction
    * @throws WorkerOutOfSpaceException if it is impossible to achieve the free requirement
    * @throws IOException if I/O errors occur when removing or moving block files
    */
-  private void freeSpaceInternal(long sessionId, long availableBytes, BlockStoreLocation location)
+  private void freeSpaceInternal(long sessionId, long availableBytes,
+         BlockStoreLocation location, boolean isEviction)
       throws WorkerOutOfSpaceException, IOException {
     EvictionPlan plan;
     mMetadataReadLock.lock();
@@ -659,36 +670,17 @@ public final class TieredBlockStore implements BlockStore {
       mMetadataReadLock.unlock();
     }
 
-    // TODO
-    // Remember to use an extra argument in the RPC request to distinguish user
-    // write request and evict writer request
-
-    /*
     // 1. remove blocks to make room.
-    for (Pair<Long, BlockStoreLocation> blockInfo : plan.toEvict()) {
-      try {
-        removeBlockInternal(sessionId, blockInfo.getFirst(), blockInfo.getSecond());
-      } catch (InvalidWorkerStateException e) {
-        // Evictor is not working properly
-        LOG.error("Failed to evict blockId {}, this is temp block", blockInfo.getFirst());
-        continue;
-      } catch (BlockDoesNotExistException e) {
-        LOG.info("Failed to evict blockId {}, it could be already deleted", blockInfo.getFirst());
-        continue;
-      }
-      synchronized (mBlockStoreEventListeners) {
-        for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
-          listener.onRemoveBlockByWorker(sessionId, blockInfo.getFirst());
-        }
-      }
-    }
-    */
-
-    // Instead of remove blocks, evict block to peer workers
+    // Instead of remove blocks, evict block to remote workers
     // Added by Nelson
     for (Pair<Long, BlockStoreLocation> blockInfo : plan.toEvict()) {
       try {
-        evictBlockInternal(sessionId, blockInfo.getFirst(), blockInfo.getSecond());
+        if (!isEviction) {
+          // preventing from recursive remote worker eviction
+          evictBlockInternal(sessionId, blockInfo.getFirst(), blockInfo.getSecond());
+        } else {
+          removeBlockInternal(sessionId, blockInfo.getFirst(), blockInfo.getSecond());
+        }
       } catch (InvalidWorkerStateException e) {
         // Evictor is not working properly
         LOG.error("Failed to evict blockId {}, this is temp block", blockInfo.getFirst());
@@ -697,11 +689,16 @@ public final class TieredBlockStore implements BlockStore {
         LOG.info("Failed to evict blockId {}, it could be already deleted", blockInfo.getFirst());
         continue;
       }
+
+      // TODO(Nelson) update removedBlockLost before delete the block
       synchronized (mBlockStoreEventListeners) {
         for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
           listener.onRemoveBlockByWorker(sessionId, blockInfo.getFirst());
         }
       }
+
+      // instant heartbeat to update information at the master
+      //AlluxioWorker.get().getBlockWorker().instantHeartbeat();
     }
 
     // 2. transfer blocks among tiers.
@@ -936,19 +933,7 @@ public final class TieredBlockStore implements BlockStore {
                 location);
       }
 
-      // TODO(Nelson) evict block to other worker here
-
-      // Get workerInfoList from master
-      // Get the target worker with MostAvailableFirstPolicy
-      FileWriteLocationPolicy policy = new MostAvailableFirstPolicy();
-      List<BlockWorkerInfo> workerInfos = AlluxioWorker.get().getBlockWorker().getWorkerInfoList();
-      WorkerNetAddress peerWorkerAddress = policy.getWorkerForNextBlock(workerInfos, 0);
-
-      // make a write request to new worker with NettyRemoteBlockWriter
-      // Write blocks to new worker
-      // Commit block at new worker
-      // Use instant heartbeat to inform BlockMaster the remove of blocks from this worker
-      // Do not completeFile with FileSystemMaster
+      BlockMover.getInstance().move(blockId, blockMeta);
 
       // Heavy IO is guarded by block lock but not metadata lock. This may throw IOException.
       FileUtils.delete(filePath);

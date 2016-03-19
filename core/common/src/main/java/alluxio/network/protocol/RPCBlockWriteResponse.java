@@ -28,6 +28,7 @@ public final class RPCBlockWriteResponse extends RPCResponse {
   private final long mBlockId;
   private final long mOffset;
   private final long mLength;
+  private final int  mIsEviction;
   private final Status mStatus;
 
   /**
@@ -37,14 +38,16 @@ public final class RPCBlockWriteResponse extends RPCResponse {
    * @param blockId the id of the block
    * @param offset the block offset that the writing began at
    * @param length the number of bytes written
+   * @param isEviction true if this request is from remote worker eviction
    * @param status the status
    */
   public RPCBlockWriteResponse(long sessionId, long blockId, long offset, long length,
-      Status status) {
+      int isEviction, Status status) {
     mSessionId = sessionId;
     mBlockId = blockId;
     mOffset = offset;
     mLength = length;
+    mIsEviction = isEviction;
     mStatus = status;
   }
 
@@ -62,7 +65,7 @@ public final class RPCBlockWriteResponse extends RPCResponse {
     Preconditions.checkArgument(status != Status.SUCCESS);
     // The response has no payload, so length must be 0.
     return new RPCBlockWriteResponse(request.getSessionId(), request.getBlockId(),
-        request.getOffset(), request.getLength(), status);
+        request.getOffset(), request.getLength(), request.getEvictionBit(), status);
   }
 
   @Override
@@ -81,14 +84,16 @@ public final class RPCBlockWriteResponse extends RPCResponse {
     long blockId = in.readLong();
     long offset = in.readLong();
     long length = in.readLong();
+    int isEviction = in.readInt();
     short status = in.readShort();
-    return new RPCBlockWriteResponse(sessionId, blockId, offset, length, Status.fromShort(status));
+    return new RPCBlockWriteResponse(
+            sessionId, blockId, offset, length, isEviction, Status.fromShort(status));
   }
 
   @Override
   public int getEncodedLength() {
     // 4 longs (mSessionId, mBlockId, mOffset, mLength) + 1 short (mStatus)
-    return Longs.BYTES * 4 + Shorts.BYTES;
+    return Longs.BYTES * 4 + Integer.BYTES + Shorts.BYTES;
   }
 
   @Override
@@ -97,13 +102,15 @@ public final class RPCBlockWriteResponse extends RPCResponse {
     out.writeLong(mBlockId);
     out.writeLong(mOffset);
     out.writeLong(mLength);
+    out.writeInt(mIsEviction);
     out.writeShort(mStatus.getId());
   }
 
   @Override
   public String toString() {
     return Objects.toStringHelper(this).add("blockId", mBlockId).add("offset", mOffset)
-        .add("length", mLength).add("sessionId", mSessionId).add("status", mStatus).toString();
+        .add("length", mLength).add("sessionId", mSessionId)
+            .add("isEviction", mIsEviction).add("status", mStatus).toString();
   }
 
   /**

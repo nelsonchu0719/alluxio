@@ -80,8 +80,34 @@ interface BlockStore {
    * @throws IOException if blocks in eviction plan fail to be moved or deleted
    */
   TempBlockMeta createBlockMeta(long sessionId, long blockId, BlockStoreLocation location,
-      long initialBlockSize) throws BlockAlreadyExistsException, WorkerOutOfSpaceException,
-      IOException;
+      long initialBlockSize) throws BlockAlreadyExistsException,
+          WorkerOutOfSpaceException, IOException;
+
+  /**
+   * Creates the meta data of a new block and assigns a temporary path (e.g., a subdir of the final
+   * location named after the the session id) to store its data. This method only creates the meta
+   * data but adds NO data to this temporary location. The location can be a location with specific
+   * tier and dir, or {@link BlockStoreLocation#anyTier()}, or
+   * {@link BlockStoreLocation#anyDirInTier(String)}.
+   * <p>
+   * Before commit, all the data written to this block will be stored in the temp path and the block
+   * is only "visible" to its writer client.
+   *
+   * @param sessionId the id of the session
+   * @param blockId the id of the block to create
+   * @param location location to create this block
+   * @param initialBlockSize initial size of this block in bytes
+   * @param isEviction true if this request is from remote worker eviction
+   * @return metadata of the temp block created
+   * @throws IllegalArgumentException if location does not belong to tiered storage
+   * @throws BlockAlreadyExistsException if block id already exists, either temporary or committed,
+   *         or block in eviction plan already exists
+   * @throws WorkerOutOfSpaceException if this Store has no more space than the initialBlockSize
+   * @throws IOException if blocks in eviction plan fail to be moved or deleted
+   */
+  TempBlockMeta createBlockMeta(long sessionId, long blockId, BlockStoreLocation location,
+      long initialBlockSize, boolean isEviction) throws BlockAlreadyExistsException,
+          WorkerOutOfSpaceException, IOException;
 
   /**
    * Gets the metadata of a block given its block id or throws {@link BlockDoesNotExistException}.
@@ -158,6 +184,23 @@ interface BlockStore {
    *         moved or deleted on file system
    */
   void requestSpace(long sessionId, long blockId, long additionalBytes)
+      throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException;
+
+  /**
+   * Requests to increase the size of a temp block. Since a temp block is "private" to the writer
+   * client, this operation requires no previously acquired lock.
+   *
+   * @param sessionId the id of the session to request space
+   * @param blockId the id of the temp block
+   * @param additionalBytes the amount of more space to request in bytes, never be less than 0
+   * @param isEviction true if this request is from remote worker eviction
+   * @throws BlockDoesNotExistException if block id can not be found, or some block in eviction plan
+   *         cannot be found
+   * @throws WorkerOutOfSpaceException if requested space can not be satisfied
+   * @throws IOException if blocks in {@link alluxio.worker.block.evictor.EvictionPlan} fail to be
+   *         moved or deleted on file system
+   */
+  void requestSpace(long sessionId, long blockId, long additionalBytes, boolean isEviction)
       throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException;
 
   /**

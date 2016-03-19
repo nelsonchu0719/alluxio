@@ -57,6 +57,7 @@ public class RPCMessageIntegrationTest {
   private static final long BLOCK_ID = 11;
   private static final long OFFSET = 22;
   private static final long LENGTH = 33;
+  private static final int  IS_EVICTION = 0;
   private static final long LOCK_ID = 44;
 
   // This channel initializer sets up a simple pipeline with the encoder and decoder.
@@ -270,8 +271,8 @@ public class RPCMessageIntegrationTest {
   public void RPCBlockWriteRequestTest() {
     ByteBuffer payload = BufferUtils.getIncreasingByteBuffer((int) OFFSET, (int) LENGTH);
     RPCBlockWriteRequest msg =
-        new RPCBlockWriteRequest(SESSION_ID, BLOCK_ID, OFFSET, LENGTH, new DataByteBuffer(payload,
-            LENGTH));
+        new RPCBlockWriteRequest(SESSION_ID, BLOCK_ID, OFFSET, LENGTH, IS_EVICTION,
+                new DataByteBuffer(payload, LENGTH));
     RPCBlockWriteRequest decoded = (RPCBlockWriteRequest) encodeThenDecode(msg);
     assertValid(msg, decoded);
   }
@@ -279,7 +280,8 @@ public class RPCMessageIntegrationTest {
   @Test
   public void RPCBlockWriteResponseTest() {
     RPCBlockWriteResponse msg =
-        new RPCBlockWriteResponse(SESSION_ID, BLOCK_ID, OFFSET, LENGTH, RPCResponse.Status.SUCCESS);
+        new RPCBlockWriteResponse(SESSION_ID, BLOCK_ID, OFFSET, LENGTH,
+                IS_EVICTION, RPCResponse.Status.SUCCESS);
     RPCBlockWriteResponse decoded = (RPCBlockWriteResponse) encodeThenDecode(msg);
     assertValid(msg, decoded);
   }

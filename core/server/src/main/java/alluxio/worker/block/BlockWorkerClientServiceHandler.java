@@ -202,7 +202,7 @@ public final class BlockWorkerClientServiceHandler implements BlockWorkerClientS
   @Override
   public boolean requestSpace(long sessionId, long blockId, long requestBytes) {
     try {
-      mWorker.requestSpace(sessionId, blockId, requestBytes);
+      mWorker.requestSpace(sessionId, blockId, requestBytes, false);
       return true;
     } catch (Exception e) {
       LOG.error("Failed to request {} bytes for block: {}", requestBytes, blockId, e);

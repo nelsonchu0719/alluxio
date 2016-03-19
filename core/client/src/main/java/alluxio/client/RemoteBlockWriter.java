@@ -13,6 +13,7 @@ package alluxio.client;
 
 import alluxio.Configuration;
 import alluxio.Constants;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.util.CommonUtils;
 
 import com.google.common.base.Throwables;
@@ -63,6 +64,13 @@ public interface RemoteBlockWriter extends Closeable {
    * @param offset the offset into the source array of bytes
    * @param length the length of the data to write (in bytes)
    * @throws IOException when the operation fails
+   * @throws BlockAlreadyExistsException when block already exists
    */
-  void write(byte[] bytes, int offset, int length) throws IOException;
+  void write(byte[] bytes, int offset, int length)
+          throws IOException, BlockAlreadyExistsException;
+
+  /**
+   * @param isEviction true if this writer is for eviction
+   */
+  void setEviction(boolean isEviction);
 }

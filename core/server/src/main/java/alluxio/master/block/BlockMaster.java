@@ -77,6 +77,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 public final class BlockMaster extends AbstractMaster implements ContainerIdGenerable {
   private static final Logger LOG = LoggerFactory.getLogger(Constants.LOGGER_TYPE);
 
+  /** The blockId to FileId mapping, it is an ugly walk around= =. */
+  private final Map<Long, Long> mBlockIdToFileIdMap = new HashMap<>();
+
   // Block metadata management.
   /**
    * Blocks on all workers, including active and lost blocks. This state must be journaled. Access
@@ -331,6 +334,7 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
             // Otherwise blockId in mLostBlock can be dangling index if the metadata is gone.
             mLostBlocks.remove(blockId);
             mBlocks.remove(blockId);
+            removeFileId(blockId);
           }
         }
       }
@@ -743,6 +747,37 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
     @Override
     public void close() {
       // Nothing to clean up
+    }
+  }
+
+  /**
+   * Get the associated fileId to this block.
+   * @param blockId Block id
+   * @return file id
+   */
+  public long getFileId(long blockId) {
+    synchronized (mBlockIdToFileIdMap) {
+      return mBlockIdToFileIdMap.get(blockId);
+    }
+  }
+
+  /**
+   * Set the associated fileId to this block.
+   * @param blockId Block id
+   * @param fileId file id
+   */
+  public void setFileId(long blockId, long fileId) {
+    synchronized (mBlockIdToFileIdMap) {
+      mBlockIdToFileIdMap.put(blockId, fileId);
+    }
+  }
+
+  /**
+   * @param blockId Block id
+   */
+  public void removeFileId(long blockId) {
+    synchronized (mBlockIdToFileIdMap) {
+      mBlockIdToFileIdMap.remove(blockId);
     }
   }
 }

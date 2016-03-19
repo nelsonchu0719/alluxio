@@ -15,6 +15,7 @@ import alluxio.AbstractClient;
 import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.exception.AlluxioException;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.ConnectionFailedException;
 import alluxio.exception.FileDoesNotExistException;
 import alluxio.exception.WorkerOutOfSpaceException;
@@ -334,9 +335,10 @@ public final class BlockWorkerClient extends AbstractClient {
    * @param initialBytes The initial size bytes allocated for the block
    * @return the temporary path of the block
    * @throws IOException if a non-Alluxio exception occurs
+   * @throws BlockAlreadyExistsException if block already exists
    */
   public synchronized String requestBlockLocation(final long blockId, final long initialBytes)
-      throws IOException {
+          throws IOException, BlockAlreadyExistsException {
     try {
       return retryRPC(new RpcCallableThrowsAlluxioTException<String>() {
         @Override
@@ -347,6 +349,8 @@ public final class BlockWorkerClient extends AbstractClient {
     } catch (AlluxioException e) {
       if (e instanceof WorkerOutOfSpaceException) {
         throw new IOException("Failed to request " + initialBytes, e);
+      } else if (e instanceof BlockAlreadyExistsException) {
+        throw (BlockAlreadyExistsException) e;
       } else {
         throw new IOException(e);
       }

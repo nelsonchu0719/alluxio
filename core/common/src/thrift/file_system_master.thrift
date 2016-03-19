@@ -216,10 +216,16 @@ service FileSystemMasterClientService extends common.AlluxioService {
 service FileSystemMasterWorkerService extends common.AlluxioService {
 
   /*
-   * Returns the file information.
+   * Returns the file information with FileId.
    */
   FileInfo getFileInfo( /** the id of the file */ 1: i64 fileId)
     throws (1: exception.AlluxioTException e)
+
+  /*
+   * Returns the file information with BlockId.
+   */
+  FileInfo getFileInfoWithBlock( /** one block id of the file */ 1: i64 blockId)
+      throws (1: exception.AlluxioTException e)
 
   /**
    * Returns the set of pinned files.

@@ -228,6 +228,13 @@ public final class BlockWorker extends AbstractWorker {
   }
 
   /**
+   * Instant heartbeat.
+   */
+  public void instantHeartbeat() {
+    mBlockMasterSync.heartbeat();
+  }
+
+  /**
    * Gets the info of a list of workers.
    * @return A list of worker info returned by master
    * @throws IOException if an I/O error occurs
@@ -337,7 +344,8 @@ public final class BlockWorker extends AbstractWorker {
   public String createBlock(long sessionId, long blockId, String tierAlias, long initialBytes)
       throws BlockAlreadyExistsException, WorkerOutOfSpaceException, IOException {
     BlockStoreLocation loc = BlockStoreLocation.anyDirInTier(tierAlias);
-    TempBlockMeta createdBlock = mBlockStore.createBlockMeta(sessionId, blockId, loc, initialBytes);
+    TempBlockMeta createdBlock = mBlockStore
+            .createBlockMeta(sessionId, blockId, loc, initialBytes, false);
     return createdBlock.getPath();
   }
 
@@ -357,8 +365,30 @@ public final class BlockWorker extends AbstractWorker {
    */
   public void createBlockRemote(long sessionId, long blockId, String tierAlias, long initialBytes)
       throws BlockAlreadyExistsException, WorkerOutOfSpaceException, IOException {
+    createBlockRemote(sessionId, blockId, tierAlias, initialBytes, false);
+  }
+
+  /**
+   * Creates a block. This method is only called from a data server.
+   * Calls {@link #getTempBlockWriterRemote(long, long)} to get a writer for writing to the block.
+   * Throws an {@link IllegalArgumentException} if the location does not belong to tiered storage.
+   *
+   * @param sessionId the id of the client
+   * @param blockId the id of the block to be created
+   * @param tierAlias the alias of the tier to place the new block in
+   * @param initialBytes the initial amount of bytes to be allocated
+   * @param isEviction true if this request is from remote worker eviction
+   * @throws BlockAlreadyExistsException if blockId already exists, either temporary or committed,
+   *         or block in eviction plan already exists
+   * @throws WorkerOutOfSpaceException if this Store has no more space than the initialBlockSize
+   * @throws IOException if blocks in eviction plan fail to be moved or deleted
+   */
+  public void createBlockRemote(long sessionId, long blockId, String tierAlias,
+      long initialBytes, boolean isEviction)
+          throws BlockAlreadyExistsException, WorkerOutOfSpaceException, IOException {
     BlockStoreLocation loc = BlockStoreLocation.anyDirInTier(tierAlias);
-    TempBlockMeta createdBlock = mBlockStore.createBlockMeta(sessionId, blockId, loc, initialBytes);
+    TempBlockMeta createdBlock = mBlockStore
+            .createBlockMeta(sessionId, blockId, loc, initialBytes, isEviction);
     FileUtils.createBlockPath(createdBlock.getPath());
   }
 
@@ -553,7 +583,26 @@ public final class BlockWorker extends AbstractWorker {
    */
   public void requestSpace(long sessionId, long blockId, long additionalBytes)
       throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException {
-    mBlockStore.requestSpace(sessionId, blockId, additionalBytes);
+    requestSpace(sessionId, blockId, additionalBytes, false);
+  }
+
+  /**
+   * Request an amount of space for a block in its storage directory. The block must be a temporary
+   * block.
+   *
+   * @param sessionId the id of the client
+   * @param blockId the id of the block to allocate space to
+   * @param additionalBytes the amount of bytes to allocate
+   * @param isEviction true if this request is from remote worker eviction
+   * @throws BlockDoesNotExistException if blockId can not be found, or some block in eviction plan
+   *         cannot be found
+   * @throws WorkerOutOfSpaceException if requested space can not be satisfied
+   * @throws IOException if blocks in {@link alluxio.worker.block.evictor.EvictionPlan} fail to be
+   *         moved or deleted on file system
+   */
+  public void requestSpace(long sessionId, long blockId, long additionalBytes, boolean isEviction)
+          throws BlockDoesNotExistException, WorkerOutOfSpaceException, IOException {
+    mBlockStore.requestSpace(sessionId, blockId, additionalBytes, isEviction);
   }
 
   /**
@@ -608,6 +657,21 @@ public final class BlockWorker extends AbstractWorker {
   public FileInfo getFileInfo(long fileId) throws IOException {
     try {
       return mFileSystemMasterClient.getFileInfo(fileId);
+    } catch (AlluxioException e) {
+      throw new IOException(e);
+    }
+  }
+
+  /**
+   * Gets the file information.
+   *
+   * @param blockId the file id
+   * @return the file info
+   * @throws IOException if an I/O error occurs
+   */
+  public FileInfo getFileInfoWithBlock(long blockId) throws IOException {
+    try {
+      return mFileSystemMasterClient.getFileInfoWithBlock(blockId);
     } catch (AlluxioException e) {
       throw new IOException(e);
     }

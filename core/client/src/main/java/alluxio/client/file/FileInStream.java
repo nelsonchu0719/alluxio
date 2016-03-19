@@ -18,7 +18,6 @@ import alluxio.client.BoundedStream;
 import alluxio.client.Seekable;
 import alluxio.client.block.BlockInStream;
 import alluxio.client.block.BufferedBlockOutStream;
-import alluxio.client.block.LocalBlockInStream;
 import alluxio.client.block.UnderStoreBlockInStream;
 import alluxio.client.file.options.InStreamOptions;
 import alluxio.client.file.policy.FileWriteLocationPolicy;
@@ -345,12 +344,16 @@ public class FileInStream extends InputStream implements BoundedStream, Seekable
           mContext.getAluxioBlockStore().promote(blockId);
         } catch (IOException e) {
           // Failed to promote
+          // Might caused by information inconsistency between master and workers due to
+          // delay of BlockReportHeartbeat(Added by Nelson)
           LOG.warn("Promotion of block with ID {} failed.", blockId, e);
         }
       }
       mCurrentBlockInStream = mContext.getAluxioBlockStore().getInStream(blockId);
-      mShouldCacheCurrentBlock =
-          !(mCurrentBlockInStream instanceof LocalBlockInStream) && mAlluxioStorageType.isStore();
+      // block is already in alluxio storage
+      mShouldCacheCurrentBlock = false;
+      //mShouldCacheCurrentBlock =
+      //    !(mCurrentBlockInStream instanceof LocalBlockInStream) && mAlluxioStorageType.isStore();
     } catch (IOException e) {
       LOG.debug("Failed to get BlockInStream for block with ID {}, using UFS instead. {}",
           blockId, e);

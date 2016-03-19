@@ -15,6 +15,7 @@ import alluxio.Configuration;
 import alluxio.Constants;
 import alluxio.StorageTierAssoc;
 import alluxio.WorkerStorageTierAssoc;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.BlockDoesNotExistException;
 import alluxio.exception.InvalidWorkerStateException;
 import alluxio.network.protocol.RPCBlockReadRequest;
@@ -128,6 +129,7 @@ public final class BlockDataServerHandler {
     final long blockId = req.getBlockId();
     final long offset = req.getOffset();
     final long length = req.getLength();
+    final boolean isEviction = req.isEviction();
     final DataBuffer data = req.getPayloadDataBuffer();
 
     BlockWriter writer = null;
@@ -139,23 +141,33 @@ public final class BlockDataServerHandler {
         // This is the first write to the block, so create the temp block file. The file will only
         // be created if the first write starts at offset 0. This allocates enough space for the
         // write.
-        mWorker.createBlockRemote(sessionId, blockId, mStorageTierAssoc.getAlias(0), length);
+        mWorker.createBlockRemote(
+                sessionId, blockId, mStorageTierAssoc.getAlias(0), length, isEviction);
       } else {
         // Allocate enough space in the existing temporary block for the write.
-        mWorker.requestSpace(sessionId, blockId, length);
+        mWorker.requestSpace(sessionId, blockId, length, isEviction);
       }
       writer = mWorker.getTempBlockWriterRemote(sessionId, blockId);
       writer.append(buffer);
 
       RPCBlockWriteResponse resp =
-          new RPCBlockWriteResponse(sessionId, blockId, offset, length, RPCResponse.Status.SUCCESS);
+              new RPCBlockWriteResponse(
+                      sessionId, blockId, offset, length,
+                      isEviction ? 1 : 0, RPCResponse.Status.SUCCESS);
       ChannelFuture future = ctx.writeAndFlush(resp);
       future.addListener(ChannelFutureListener.CLOSE);
       future.addListener(new ClosableResourceChannelListener(writer));
     } catch (Exception e) {
       LOG.error("Error writing remote block : {}", e.getMessage(), e);
-      RPCBlockWriteResponse resp =
-          RPCBlockWriteResponse.createErrorResponse(req, RPCResponse.Status.WRITE_ERROR);
+      RPCBlockWriteResponse resp;
+      // differentiate BlockAlreadyExistsException for wrong worker caching handling.
+      // Added by Nelson
+      if (e instanceof  BlockAlreadyExistsException) {
+        resp = RPCBlockWriteResponse
+            .createErrorResponse(req, RPCResponse.Status.WRITE_ERROR_BLOCK_EXISTED);
+      } else {
+        resp = RPCBlockWriteResponse.createErrorResponse(req, RPCResponse.Status.WRITE_ERROR);
+      }
       ChannelFuture future = ctx.writeAndFlush(resp);
       future.addListener(ChannelFutureListener.CLOSE);
       if (writer != null) {

@@ -13,6 +13,7 @@ package alluxio.client.netty;
 
 import alluxio.Constants;
 import alluxio.client.RemoteBlockWriter;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.ExceptionMessage;
 import alluxio.network.protocol.RPCBlockWriteRequest;
 import alluxio.network.protocol.RPCBlockWriteResponse;
@@ -47,6 +48,7 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
   private InetSocketAddress mAddress;
   private long mBlockId;
   private long mSessionId;
+  private int  mIsEviction = 0;
 
   // Total number of bytes written to the remote block.
   private long mWrittenBytes;
@@ -81,7 +83,8 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
   }
 
   @Override
-  public void write(byte[] bytes, int offset, int length) throws IOException {
+  public void write(byte[] bytes, int offset, int length)
+          throws IOException, BlockAlreadyExistsException {
     SingleResponseListener listener = new SingleResponseListener();
     try {
       // TODO(hy): keep connection open across multiple write calls.
@@ -91,7 +94,7 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
       Channel channel = f.channel();
       mHandler.addListener(listener);
       channel.writeAndFlush(new RPCBlockWriteRequest(mSessionId, mBlockId, mWrittenBytes, length,
-          new DataByteArrayChannel(bytes, offset, length)));
+          mIsEviction, new DataByteArrayChannel(bytes, offset, length)));
 
       RPCResponse response = listener.get(NettyClient.TIMEOUT_MS, TimeUnit.MILLISECONDS);
       channel.close().sync();
@@ -103,8 +106,14 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
           LOG.info("status: {} from remote machine {} received", status, mAddress);
 
           if (status != RPCResponse.Status.SUCCESS) {
-            throw new IOException(ExceptionMessage.BLOCK_WRITE_ERROR.getMessage(mBlockId,
-                mSessionId, mAddress, status.getMessage()));
+            if (status == RPCResponse.Status.WRITE_ERROR_BLOCK_EXISTED) {
+              throw new BlockAlreadyExistsException(
+                      ExceptionMessage.BLOCK_WRITE_ERROR.getMessage(mBlockId,
+                      mSessionId, mAddress, mIsEviction, status.getMessage()));
+            } else {
+              throw new IOException(ExceptionMessage.BLOCK_WRITE_ERROR.getMessage(mBlockId,
+                      mSessionId, mAddress, mIsEviction, status.getMessage()));
+            }
           }
           mWrittenBytes += length;
           break;
@@ -116,9 +125,17 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
               .getMessage(response.getType(), RPCMessage.Type.RPC_BLOCK_WRITE_RESPONSE));
       }
     } catch (Exception e) {
+      if (e instanceof BlockAlreadyExistsException) {
+        throw (BlockAlreadyExistsException) e;
+      }
       throw new IOException(e);
     } finally {
       mHandler.removeListener(listener);
     }
+  }
+
+  @Override
+  public void setEviction(boolean isEviction) {
+    mIsEviction = isEviction ? 1 : 0;
   }
 }

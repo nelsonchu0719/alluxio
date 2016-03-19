@@ -16,6 +16,7 @@ import alluxio.exception.AccessControlException;
 import alluxio.exception.AlluxioException;
 import alluxio.exception.FileDoesNotExistException;
 import alluxio.exception.InvalidPathException;
+import alluxio.master.AlluxioMaster;
 import alluxio.thrift.AlluxioTException;
 import alluxio.thrift.FileInfo;
 import alluxio.thrift.FileSystemCommand;
@@ -60,6 +61,11 @@ public final class FileSystemMasterWorkerServiceHandler
     } catch (AlluxioException e) {
       throw e.toAlluxioTException();
     }
+  }
+
+  @Override
+  public FileInfo getFileInfoWithBlock(long blockId) throws AlluxioTException {
+    return getFileInfo(AlluxioMaster.get().getBlockMaster().getFileId(blockId));
   }
 
   @Override

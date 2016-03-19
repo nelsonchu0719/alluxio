@@ -14,6 +14,7 @@ package alluxio.client.block;
 import alluxio.Constants;
 import alluxio.client.ClientContext;
 import alluxio.exception.AlluxioException;
+import alluxio.exception.BlockAlreadyExistsException;
 import alluxio.exception.ExceptionMessage;
 import alluxio.util.io.FileUtils;
 import alluxio.util.network.NetworkAddressUtils;
@@ -63,6 +64,11 @@ public final class LocalBlockOutStream extends BufferedBlockOutStream {
       // Change the permission of the temporary file in order that the worker can move it.
       FileUtils.changeLocalFileToFullPermission(blockPath);
       LOG.info("LocalBlockOutStream created new file block, block path: {}", blockPath);
+    } catch (BlockAlreadyExistsException e) {
+      // handle block creation failure(added by Nelson)
+      setBlockCreationFailed();
+      mContext.releaseWorkerClient(mBlockWorkerClient);
+      throw new IOException(e);
     } catch (IOException e) {
       mContext.releaseWorkerClient(mBlockWorkerClient);
       throw e;
@@ -75,10 +81,12 @@ public final class LocalBlockOutStream extends BufferedBlockOutStream {
       return;
     }
     mCloser.close();
-    try {
-      mBlockWorkerClient.cancelBlock(mBlockId);
-    } catch (AlluxioException e) {
-      throw new IOException(e);
+    if (isBlockCreated()) {
+      try {
+        mBlockWorkerClient.cancelBlock(mBlockId);
+      } catch (AlluxioException e) {
+        throw new IOException(e);
+      }
     }
     mContext.releaseWorkerClient(mBlockWorkerClient);
     mClosed = true;

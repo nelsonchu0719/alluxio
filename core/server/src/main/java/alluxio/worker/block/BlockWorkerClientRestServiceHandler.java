@@ -320,7 +320,7 @@ public final class BlockWorkerClientRestServiceHandler {
       Preconditions.checkNotNull(blockId, "required 'blockId' parameter is missing");
       Preconditions.checkNotNull(sessionId, "required 'sessionId' parameter is missing");
       Preconditions.checkNotNull(requestBytes, "required 'requestBytes' parameter is missing");
-      mBlockWorker.requestSpace(sessionId, blockId, requestBytes);
+      mBlockWorker.requestSpace(sessionId, blockId, requestBytes, false);
       return Response.ok().build();
     } catch (AlluxioException | IOException | NullPointerException e) {
       LOG.warn(e.getMessage());
@@ -383,10 +383,11 @@ public final class BlockWorkerClientRestServiceHandler {
           // This is the first write to the block, so create the temp block file. The file will only
           // be created if the first write starts at offset 0. This allocates enough space for the
           // write.
-          mBlockWorker.createBlockRemote(sessionId, blockId, mStorageTierAssoc.getAlias(0), length);
+          mBlockWorker.createBlockRemote(
+                  sessionId, blockId, mStorageTierAssoc.getAlias(0), length, false);
         } else {
           // Allocate enough space in the existing temporary block for the write.
-          mBlockWorker.requestSpace(sessionId, blockId, length);
+          mBlockWorker.requestSpace(sessionId, blockId, length, false);
         }
         writer = mBlockWorker.getTempBlockWriterRemote(sessionId, blockId);
         writer.append(buffer);

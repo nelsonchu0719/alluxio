@@ -15,6 +15,7 @@ import alluxio.Constants;
 import alluxio.exception.BlockInfoException;
 import alluxio.exception.FileAlreadyCompletedException;
 import alluxio.exception.InvalidFileSizeException;
+import alluxio.master.AlluxioMaster;
 import alluxio.master.block.BlockId;
 import alluxio.proto.journal.File.InodeFileEntry;
 import alluxio.proto.journal.Journal.JournalEntry;
@@ -143,6 +144,9 @@ public final class InodeFile extends Inode<InodeFile> {
     // TODO(gene): This will not work with existing lineage implementation, since a new writer will
     // not be able to get the same block ids (to write the same block ids).
     mBlocks.add(blockId);
+
+    AlluxioMaster.get().getBlockMaster().setFileId(blockId, mId);
+
     return blockId;
   }
 

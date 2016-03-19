@@ -76,6 +76,22 @@ public final class FileSystemMasterClient extends AbstractMasterClient {
   }
 
   /**
+   * @param blockId one block id of the file for which to get the {@link FileInfo}
+   * @return the file info for the given file id
+   * @throws AlluxioException if an Alluxio error occurs
+   * @throws IOException if an I/O error occurs
+   */
+  public synchronized FileInfo getFileInfoWithBlock(final long blockId)
+          throws AlluxioException, IOException {
+    return retryRPC(new RpcCallableThrowsAlluxioTException<FileInfo>() {
+      @Override
+      public FileInfo call() throws TException {
+        return ThriftUtils.fromThrift(mClient.getFileInfoWithBlock(blockId));
+      }
+    });
+  }
+
+  /**
    * @param fileId the id of the file for which to get the {@link FileInfo}
    * @return the file info for the given file id
    * @throws AlluxioException if an Alluxio error occurs

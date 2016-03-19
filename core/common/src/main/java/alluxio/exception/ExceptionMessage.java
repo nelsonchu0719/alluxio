@@ -63,7 +63,8 @@ public enum ExceptionMessage {
   SEEK_PAST_EOF("Seek position is past EOF: {0}, fileSize: {1}"),
 
   // netty
-  BLOCK_WRITE_ERROR("Error writing blockId: {0}, sessionId: {1}, address: {2}, message: {3}"),
+  BLOCK_WRITE_ERROR(
+      "Error writing blockId: {0}, sessionId: {1}, address: {2}, isEviction: {3}, message: {4}"),
   NO_RPC_HANDLER("No handler implementation for rpc message type: {0}"),
   UNEXPECTED_RPC_RESPONSE("Unexpected response message type: {0} (expected: {1})"),
   WRITER_ALREADY_OPEN("This writer is already open for address: {0}, blockId: {1}, sessionId: {2}"),

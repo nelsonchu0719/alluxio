@@ -55,6 +55,7 @@ public abstract class BufferedBlockOutStream extends OutputStream implements Can
   protected long mFlushedBytes;
   /** Number of bytes written, including unflushed bytes. */
   protected long mWrittenBytes;
+  private boolean mBlockCreatedSucceeded = true;
 
   /**
    * Constructs a new {@link BufferedBlockOutStream}.
@@ -144,5 +145,19 @@ public abstract class BufferedBlockOutStream extends OutputStream implements Can
   private ByteBuffer allocateBuffer() {
     Configuration conf = ClientContext.getConf();
     return ByteBuffer.allocate((int) conf.getBytes(Constants.USER_FILE_BUFFER_BYTES));
+  }
+
+  /**
+   * set block creation failed.
+   */
+  protected void setBlockCreationFailed() {
+    mBlockCreatedSucceeded = false;
+  }
+
+  /**
+   * @return true if block has been created
+   */
+  protected boolean isBlockCreated() {
+    return mBlockCreatedSucceeded;
   }
 }
