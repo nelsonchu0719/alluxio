@@ -14,8 +14,6 @@ package alluxio.client.file.policy;
 import alluxio.client.block.BlockWorkerInfo;
 import alluxio.wire.WorkerNetAddress;
 
-import com.google.common.collect.Lists;
-
 import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -51,18 +49,27 @@ public final class RemoteWorkerEvictionPolicy {
                                           WorkerNetAddress excludedAddress,
                                           long toMoveSize,
                                           boolean forceMove) {
-    List<BlockWorkerInfo> inputList = Lists.newArrayList(workerInfoList);
     long mostAvailableBytes = -1;
     WorkerNetAddress result = null;
-    for (BlockWorkerInfo workerInfo : inputList) {
+    long oldestBlockTime = Long.MAX_VALUE;
+    WorkerNetAddress oldestBlockWorkerAddress = null;
+    for (BlockWorkerInfo workerInfo : workerInfoList) {
+
+      // get the worker with the oldest block
+      if (workerInfo.getOldestBlockTime() < oldestBlockTime) {
+        oldestBlockTime = workerInfo.getOldestBlockTime();
+        oldestBlockWorkerAddress = workerInfo.getNetAddress();
+      }
+
       if (!workerInfo.getNetAddress().equals(excludedAddress)) {
         // exclude local worker address
         if (((double) workerInfo.getUsedBytes() / workerInfo.getCapacityBytes() * 100)
                 < mThreshold) {
-          if (forceMove || workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
-            // satisfy memory threshold criteria
+          // satisfy memory threshold criteria
+          if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
+            // have enough free space
             if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > mostAvailableBytes) {
-              // have enough space
+              // have enough capacity
               mostAvailableBytes = workerInfo.getCapacityBytes() - workerInfo.getUsedBytes();
               result = workerInfo.getNetAddress();
             }
@@ -70,6 +77,13 @@ public final class RemoteWorkerEvictionPolicy {
         }
       }
     }
+
+    if (result == null && forceMove) {
+      if (!oldestBlockWorkerAddress.equals(excludedAddress)) {
+        result = oldestBlockWorkerAddress;
+      }
+    }
+
     return result;
   }
 }

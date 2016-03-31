@@ -185,6 +185,11 @@ public abstract class AbstractEvictor extends AbstractBlockStoreEventListener im
     return plan;
   }
 
+  @Override
+  public List<Long> getLeastSignificantBlockId() {
+    return null;
+  }
+
   /**
    * Returns an iterator for evictor cache blocks. The evictor is responsible for specifying the
    * iteration order using its own strategy. For example, {@link LRUEvictor} returns an iterator

@@ -225,7 +225,7 @@ public class BlockMasterTest {
     Assert.assertEquals(ImmutableSet.copyOf(INITIAL_BLOCKS), workerInfo.getBlocks());
     final long REMOVED_BLOCK = INITIAL_BLOCKS.get(0);
     Command heartBeat1 = mMaster.workerHeartbeat(workerId, USED_BYTES_ON_TIERS,
-        ImmutableList.of(REMOVED_BLOCK), ImmutableMap.<String, List<Long>>of());
+        ImmutableList.of(REMOVED_BLOCK), ImmutableMap.<String, List<Long>>of(), 0);
     Set<Long> expectedBlocks =
         Sets.difference(ImmutableSet.copyOf(INITIAL_BLOCKS), ImmutableSet.of(REMOVED_BLOCK));
     // block is removed from worker info
@@ -238,7 +238,7 @@ public class BlockMasterTest {
     // test heartbeat adding back the block
     List<Long> readdedBlocks = ImmutableList.of(REMOVED_BLOCK);
     Command heartBeat2 = mMaster.workerHeartbeat(workerId, USED_BYTES_ON_TIERS,
-        ImmutableList.<Long>of(), ImmutableMap.of("MEM", readdedBlocks));
+        ImmutableList.<Long>of(), ImmutableMap.of("MEM", readdedBlocks), 0);
     // block is restored to worker info
     Assert.assertEquals(ImmutableSet.copyOf(INITIAL_BLOCKS), workerInfo.getBlocks());
     // worker is restored to block info
@@ -250,7 +250,7 @@ public class BlockMasterTest {
     final long BLOCK_TO_FREE = INITIAL_BLOCKS.get(1);
     workerInfo.updateToRemovedBlock(true, BLOCK_TO_FREE);
     Command heartBeat3 = mMaster.workerHeartbeat(workerId, USED_BYTES_ON_TIERS,
-        ImmutableList.<Long>of(), ImmutableMap.<String, List<Long>>of());
+        ImmutableList.<Long>of(), ImmutableMap.<String, List<Long>>of(), 0);
     Assert.assertEquals(new Command(CommandType.Free, ImmutableList.<Long>of(BLOCK_TO_FREE)),
         heartBeat3);
   }
@@ -276,7 +276,7 @@ public class BlockMasterTest {
         ImmutableMap.of("MEM", 50L, "SSD", 100L, "HDD", 500L);
     // test simple heartbeat letting the master know that more bytes are being used
     Command heartBeat = mMaster.workerHeartbeat(workerId, NEW_USED_BYTES_ON_TIERS,
-        ImmutableList.<Long>of(), ImmutableMap.<String, List<Long>>of());
+        ImmutableList.<Long>of(), ImmutableMap.<String, List<Long>>of(), 0);
     Assert.assertEquals(new Command(CommandType.Nothing, ImmutableList.<Long>of()), heartBeat);
     // updates the number of used bytes on the worker
     Assert.assertEquals(NEW_USED_BYTES_ON_TIERS, workerInfo.getUsedBytesOnTiers());
@@ -289,7 +289,7 @@ public class BlockMasterTest {
    */
   @Test
   public void unknownHeartbeatTest() {
-    Command heartBeat = mMaster.workerHeartbeat(0, null, null, null);
+    Command heartBeat = mMaster.workerHeartbeat(0, null, null, null, 0);
     Assert.assertEquals(new Command(CommandType.Register, ImmutableList.<Long>of()), heartBeat);
   }
 

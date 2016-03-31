@@ -60,6 +60,8 @@ public final class MasterWorkerInfo {
   private Map<String, Long> mTotalBytesOnTiers;
   /** Mapping from storage tier alias to used bytes. */
   private Map<String, Long> mUsedBytesOnTiers;
+  /** the last access time for the least significant block. */
+  private long mOldestBlockAccessTime;
 
   /** ids of blocks the worker contains. */
   private Set<Long> mBlocks;
@@ -180,7 +182,8 @@ public final class MasterWorkerInfo {
         .setLastContactSec(
             (int) ((CommonUtils.getCurrentMs() - mLastUpdatedTimeMs) / Constants.SECOND_MS))
         .setState("In Service").setCapacityBytes(mCapacityBytes).setUsedBytes(mUsedBytes)
-        .setStartTimeMs(mStartTimeMs);
+        .setStartTimeMs(mStartTimeMs)
+        .setOldestBlockTime(mOldestBlockAccessTime);
   }
 
   /**
@@ -338,5 +341,13 @@ public final class MasterWorkerInfo {
   public synchronized void updateUsedBytes(String tierAlias, long usedBytesOnTier) {
     mUsedBytes += usedBytesOnTier - mUsedBytesOnTiers.get(tierAlias);
     mUsedBytesOnTiers.put(tierAlias, usedBytesOnTier);
+  }
+
+  /**
+   * Sets the last access time for the least significant block.
+   * @param time oldest last access time
+   */
+  public synchronized void updateOldestAccessTime(long time) {
+    mOldestBlockAccessTime = time;
   }
 }

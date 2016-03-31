@@ -971,6 +971,42 @@ public final class TieredBlockStore implements BlockStore {
     }
   }
 
+  @Override
+  public long getTimeForLeastSignificantBlock() {
+    mMetadataReadLock.lock();
+    List<Long> blockIds = mEvictor.getLeastSignificantBlockId();
+
+    // check blockIds is not null
+    if (blockIds.size() == 0) {
+      mMetadataReadLock.unlock();
+      return 0;
+    }
+
+    // check the block ids are valid
+    for (long blockId : blockIds) {
+      if (!mMetaManager.hasBlockMeta(blockId)) {
+        mMetadataReadLock.unlock();
+        return 0;
+      }
+    }
+
+    long avgTime = 0;
+    BlockMeta meta;
+    try {
+      // compute the avg time
+      for (long blockId : blockIds) {
+        meta = mMetaManager.getBlockMeta(blockId);
+        avgTime += meta.getLastAccessTime();
+      }
+      mMetadataReadLock.unlock();
+      return avgTime / blockIds.size();
+    } catch (BlockDoesNotExistException e) {
+      e.printStackTrace();
+    }
+    mMetadataReadLock.unlock();
+    return 0;
+  }
+
   /**
    * A wrapper on necessary info after a move block operation.
    */

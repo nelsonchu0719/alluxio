@@ -11,6 +11,8 @@
 
 package alluxio.worker.block.evictor;
 
+import alluxio.Constants;
+import alluxio.worker.WorkerContext;
 import alluxio.worker.block.BlockMetadataManagerView;
 import alluxio.worker.block.BlockStoreLocation;
 import alluxio.worker.block.allocator.Allocator;
@@ -20,6 +22,7 @@ import alluxio.worker.block.meta.StorageTierView;
 
 import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -38,6 +41,8 @@ public class LRUEvictor extends AbstractEvictor {
   private static final float LINKED_HASH_MAP_INIT_LOAD_FACTOR = 0.75f;
   private static final boolean LINKED_HASH_MAP_ACCESS_ORDERED = true;
   private static final boolean UNUSED_MAP_VALUE = true;
+  private static final int NUM_LEAST_ACCESS_BLOCK =
+          WorkerContext.getConf().getInt(Constants.WORKER_EVICTOR_REMOTE_EVICT_NUM_LEAST_BLOCK);
 
   /**
    * Access-ordered {@link java.util.LinkedHashMap} from blockId to {@link #UNUSED_MAP_VALUE}(just a
@@ -97,5 +102,19 @@ public class LRUEvictor extends AbstractEvictor {
   @Override
   protected void onRemoveBlockFromIterator(long blockId) {
     mLRUCache.remove(blockId);
+  }
+
+  @Override
+  public List<Long> getLeastSignificantBlockId() {
+    List<Long> blocks = Lists.newArrayList(mLRUCache.keySet());
+    List<Long> rtn = new ArrayList<>();
+    if (blocks.size() > 0) {
+      // the first item is the oldest.
+      for (int i = 0; i < NUM_LEAST_ACCESS_BLOCK && i < blocks.size(); i++) {
+        rtn.add(blocks.get(i));
+      }
+    }
+
+    return rtn;
   }
 }

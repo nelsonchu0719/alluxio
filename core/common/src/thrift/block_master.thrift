@@ -11,6 +11,7 @@ struct WorkerInfo {
   5: i64 capacityBytes
   6: i64 usedBytes
   7: i64 startTimeMs
+  8: i64 oldestBlockTime
 }
 
 /**
@@ -65,7 +66,8 @@ service BlockMasterWorkerService extends common.AlluxioService {
   common.Command heartbeat( /** the id of the worker */ 1: i64 workerId,
       /** the map of space used in bytes on all tiers */ 2: map<string, i64> usedBytesOnTiers,
       /** the list of removed block ids */ 3: list<i64> removedBlockIds,
-      /** the map of added blocks on all tiers */ 4: map<string, list<i64>> addedBlocksOnTiers)
+      /** the map of added blocks on all tiers */ 4: map<string, list<i64>> addedBlocksOnTiers,
+      /** the last access time for the least significant block */ 5: i64 oldestAccessTime)
 
   /**
    * Registers a worker.

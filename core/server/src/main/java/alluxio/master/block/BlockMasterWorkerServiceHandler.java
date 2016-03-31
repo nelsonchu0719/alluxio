@@ -79,9 +79,10 @@ public class BlockMasterWorkerServiceHandler implements BlockMasterWorkerService
 
   @Override
   public Command heartbeat(long workerId, Map<String, Long> usedBytesOnTiers,
-      List<Long> removedBlockIds, Map<String, List<Long>> addedBlocksOnTiers) {
+      List<Long> removedBlockIds, Map<String, List<Long>> addedBlocksOnTiers,
+      long oldestAccessTime) {
     return mBlockMaster.workerHeartbeat(workerId, usedBytesOnTiers, removedBlockIds,
-        addedBlocksOnTiers);
+        addedBlocksOnTiers, oldestAccessTime);
   }
 
   @Override

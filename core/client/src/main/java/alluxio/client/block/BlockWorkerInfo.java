@@ -27,6 +27,7 @@ public final class BlockWorkerInfo {
   private final WorkerNetAddress mNetAddress;
   private final long mCapacityBytes;
   private final long mUsedBytes;
+  private final long mOldestBlockTime;
 
   /**
    * Constructs the block worker information.
@@ -34,11 +35,14 @@ public final class BlockWorkerInfo {
    * @param netAddress the address of the worker
    * @param capacityBytes the capacity of the worker in bytes
    * @param usedBytes the used bytes of the worker
+   * @param oldestBlockTime the last access time for the oldest block
    */
-  public BlockWorkerInfo(WorkerNetAddress netAddress, long capacityBytes, long usedBytes) {
+  public BlockWorkerInfo(WorkerNetAddress netAddress, long capacityBytes,
+                         long usedBytes, long oldestBlockTime) {
     mNetAddress = Preconditions.checkNotNull(netAddress);
     mCapacityBytes = capacityBytes;
     mUsedBytes = usedBytes;
+    mOldestBlockTime = oldestBlockTime;
   }
 
   /**
@@ -60,5 +64,12 @@ public final class BlockWorkerInfo {
    */
   public long getUsedBytes() {
     return mUsedBytes;
+  }
+
+  /**
+   * @return the last access time for the oldest block
+   */
+  public long getOldestBlockTime() {
+    return mOldestBlockTime;
   }
 }

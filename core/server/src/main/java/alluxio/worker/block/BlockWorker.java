@@ -244,7 +244,7 @@ public final class BlockWorker extends AbstractWorker {
     List<BlockWorkerInfo> infoList = Lists.newArrayList();
     for (WorkerInfo workerInfo : mBlockMasterClient.getWorkerInfoList()) {
       infoList.add(new BlockWorkerInfo(workerInfo.getAddress(), workerInfo.getCapacityBytes(),
-              workerInfo.getUsedBytes()));
+              workerInfo.getUsedBytes(), workerInfo.getOldestBlockTime()));
     }
     return infoList;
   }
@@ -436,7 +436,7 @@ public final class BlockWorker extends AbstractWorker {
    * @return a block heartbeat report
    */
   public BlockHeartbeatReport getReport() {
-    return mHeartbeatReporter.generateReport();
+    return mHeartbeatReporter.generateReport(mBlockStore.getTimeForLeastSignificantBlock());
   }
 
   /**

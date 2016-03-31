@@ -51,9 +51,10 @@ public final class BlockHeartbeatReporter extends AbstractBlockStoreEventListene
    * Generates the report of the block store delta in the last heartbeat period. Calling this method
    * marks the end of a period and the start of a new heartbeat period.
    *
+   * @param lastAccessTime the last access time for the least significant block
    * @return the block store delta report for the last heartbeat period
    */
-  public BlockHeartbeatReport generateReport() {
+  public BlockHeartbeatReport generateReport(long lastAccessTime) {
     synchronized (mLock) {
       // Copy added and removed blocks
       Map<String, List<Long>> addedBlocks = new HashMap<String, List<Long>>(mAddedBlocks);
@@ -61,7 +62,7 @@ public final class BlockHeartbeatReporter extends AbstractBlockStoreEventListene
       // Clear added and removed blocks
       mAddedBlocks.clear();
       mRemovedBlocks.clear();
-      return new BlockHeartbeatReport(addedBlocks, removedBlocks);
+      return new BlockHeartbeatReport(addedBlocks, removedBlocks, lastAccessTime);
     }
   }
 

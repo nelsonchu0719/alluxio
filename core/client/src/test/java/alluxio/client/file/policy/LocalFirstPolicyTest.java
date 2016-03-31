@@ -38,9 +38,9 @@ public final class LocalFirstPolicyTest {
     LocalFirstPolicy policy = new LocalFirstPolicy();
     List<BlockWorkerInfo> workerInfoList = Lists.newArrayList();
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost("worker1")
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0, 0));
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost(localhostName)
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0, 0));
     Assert.assertEquals(localhostName,
         policy.getWorkerForNextBlock(workerInfoList, Constants.MB).getHost());
   }
@@ -54,9 +54,9 @@ public final class LocalFirstPolicyTest {
     LocalFirstPolicy policy = new LocalFirstPolicy();
     List<BlockWorkerInfo> workerInfoList = Lists.newArrayList();
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost("worker1")
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0, 0));
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost(localhostName)
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.MB, Constants.MB));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.MB, Constants.MB, 0));
     Assert.assertEquals("worker1",
         policy.getWorkerForNextBlock(workerInfoList, Constants.GB).getHost());
   }

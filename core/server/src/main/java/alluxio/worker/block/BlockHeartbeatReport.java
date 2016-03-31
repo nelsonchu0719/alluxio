@@ -26,16 +26,21 @@ public final class BlockHeartbeatReport {
   private final Map<String, List<Long>> mAddedBlocks;
   /** List of block ids removed in the last heartbeat period. */
   private final List<Long> mRemovedBlocks;
+  /** last access time for the least significant block. */
+  private final long mLastAccessTimeForLeastSignificantBlock;
 
   /**
    * Creates a new instance of {@link BlockHeartbeatReport}.
    *
    * @param addedBlocks added blocks
    * @param removedBlocks remove blocks
+   * @param lastAccessTime last access time for the oldest block
    */
-  public BlockHeartbeatReport(Map<String, List<Long>> addedBlocks, List<Long> removedBlocks) {
+  public BlockHeartbeatReport(Map<String, List<Long>> addedBlocks,
+                              List<Long> removedBlocks, long lastAccessTime) {
     mAddedBlocks = addedBlocks;
     mRemovedBlocks = removedBlocks;
+    mLastAccessTimeForLeastSignificantBlock = lastAccessTime;
   }
 
   /**
@@ -54,5 +59,12 @@ public final class BlockHeartbeatReport {
    */
   public List<Long> getRemovedBlocks() {
     return Collections.unmodifiableList(mRemovedBlocks);
+  }
+
+  /**
+   * @return last access time for the least significant block
+   */
+  public long getLastAccessTimeForLeastSignificantBlock() {
+    return mLastAccessTimeForLeastSignificantBlock;
   }
 }

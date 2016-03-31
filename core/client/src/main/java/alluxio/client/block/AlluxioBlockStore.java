@@ -91,7 +91,7 @@ public final class AlluxioBlockStore {
     try {
       for (WorkerInfo workerInfo : masterClient.getWorkerInfoList()) {
         infoList.add(new BlockWorkerInfo(workerInfo.getAddress(), workerInfo.getCapacityBytes(),
-            workerInfo.getUsedBytes()));
+            workerInfo.getUsedBytes(), workerInfo.getOldestBlockTime()));
       }
       return infoList;
     } finally {

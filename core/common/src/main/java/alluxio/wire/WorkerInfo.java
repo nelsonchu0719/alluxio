@@ -28,6 +28,7 @@ public final class WorkerInfo {
   private long mCapacityBytes;
   private long mUsedBytes;
   private long mStartTimeMs;
+  private long mOldestBlockTime;
 
   /**
    * Creates a new instance of {@link WorkerInfo}.
@@ -99,6 +100,13 @@ public final class WorkerInfo {
   }
 
   /**
+   * @return the last access time for the oldest block
+   */
+  public long getOldestBlockTime() {
+    return mOldestBlockTime;
+  }
+
+  /**
    * @param id the worker id to use
    * @return the worker descriptor
    */
@@ -164,11 +172,20 @@ public final class WorkerInfo {
   }
 
   /**
+   * @param oldestTime the last access time of the oldest block
+   * @return the worker descriptor
+   */
+  public WorkerInfo setOldestBlockTime(long oldestTime) {
+    mOldestBlockTime = oldestTime;
+    return this;
+  }
+
+  /**
    * @return thrift representation of the worker descriptor
    */
   protected alluxio.thrift.WorkerInfo toThrift() {
     return new alluxio.thrift.WorkerInfo(mId, mAddress.toThrift(), mLastContactSec, mState,
-        mCapacityBytes, mUsedBytes, mStartTimeMs);
+        mCapacityBytes, mUsedBytes, mStartTimeMs, mOldestBlockTime);
   }
 
   @Override

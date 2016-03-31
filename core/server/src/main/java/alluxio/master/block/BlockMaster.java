@@ -574,10 +574,12 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
    * @param usedBytesOnTiers a mapping from tier alias to the used bytes
    * @param removedBlockIds a list of block ids removed from this worker
    * @param addedBlocksOnTiers a mapping from tier alias to the added blocks
+   * @param oldestAccessTime the last access time for the oldest block
    * @return an optional command for the worker to execute
    */
   public Command workerHeartbeat(long workerId, Map<String, Long> usedBytesOnTiers,
-      List<Long> removedBlockIds, Map<String, List<Long>> addedBlocksOnTiers) {
+      List<Long> removedBlockIds, Map<String, List<Long>> addedBlocksOnTiers,
+      long oldestAccessTime) {
     synchronized (mBlocks) {
       synchronized (mWorkers) {
         if (!mWorkers.contains(mIdIndex, workerId)) {
@@ -590,6 +592,7 @@ public final class BlockMaster extends AbstractMaster implements ContainerIdGene
         processWorkerAddedBlocks(workerInfo, addedBlocksOnTiers);
 
         workerInfo.updateUsedBytes(usedBytesOnTiers);
+        workerInfo.updateOldestAccessTime(oldestAccessTime);
         workerInfo.updateLastUpdatedTimeMs();
 
         List<Long> toRemoveBlocks = workerInfo.getToRemoveBlocks();

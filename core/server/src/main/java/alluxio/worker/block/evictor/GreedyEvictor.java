@@ -122,6 +122,12 @@ public final class GreedyEvictor implements Evictor {
     return new EvictionPlan(toTransfer, toEvict);
   }
 
+  @Override
+  public List<Long> getLeastSignificantBlockId() {
+    // no one should use this method
+    return null;
+  }
+
   // Checks if a dir has enough space---including space already available and space might be
   // available after eviction.
   private boolean canEvictBlocksFromDir(StorageDirView dirView, long bytesToBeAvailable) {

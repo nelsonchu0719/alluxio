@@ -22,6 +22,7 @@ import alluxio.worker.block.allocator.Allocator;
 import com.google.common.base.Throwables;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.List;
 
 /**
  * Interface for the eviction policy in Alluxio.
@@ -78,4 +79,9 @@ public interface Evictor {
    */
   EvictionPlan freeSpaceWithView(long availableBytes, BlockStoreLocation location,
       BlockMetadataManagerView view);
+
+  /**
+   * @return a list the last block id in the evictor priority queue
+   */
+  List<Long> getLeastSignificantBlockId();
 }

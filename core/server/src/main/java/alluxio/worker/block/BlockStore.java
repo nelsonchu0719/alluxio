@@ -361,4 +361,10 @@ interface BlockStore {
    * @param inodes a set of inodes that are currently pinned
    */
   void updatePinnedInodes(Set<Long> inodes);
+
+  /**
+   * @return the last access time for the least significant block,
+   * 0 if no block is found on this worker
+   */
+  long getTimeForLeastSignificantBlock();
 }

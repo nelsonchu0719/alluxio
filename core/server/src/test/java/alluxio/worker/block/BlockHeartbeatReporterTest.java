@@ -46,18 +46,18 @@ public class BlockHeartbeatReporterTest {
   }
 
   /**
-   * Tests the {@link BlockHeartbeatReporter#generateReport()} method for an empty report.
+   * Tests the {@link BlockHeartbeatReporter#generateReport(long)} method for an empty report.
    */
   @Test
   public void generateReportEmptyTest() {
-    BlockHeartbeatReport report = mReporter.generateReport();
+    BlockHeartbeatReport report = mReporter.generateReport(0);
     Assert.assertTrue(report.getAddedBlocks().isEmpty());
     Assert.assertTrue(report.getRemovedBlocks().isEmpty());
   }
 
   /**
-   * Tests the {@link BlockHeartbeatReporter#generateReport()} method to correctly generate a report
-   * after moving block.
+   * Tests the {@link BlockHeartbeatReporter#generateReport(long)}
+   * method to correctly generate a report after moving block.
    */
   @Test
   public void generateReportMoveTest() {
@@ -67,7 +67,7 @@ public class BlockHeartbeatReporterTest {
     moveBlock(block1, MEM_LOC);
     moveBlock(block2, SSD_LOC);
     moveBlock(block3, HDD_LOC);
-    BlockHeartbeatReport report = mReporter.generateReport();
+    BlockHeartbeatReport report = mReporter.generateReport(0);
     Map<String, List<Long>> addedBlocks = report.getAddedBlocks();
 
     // Block1 moved to memory
@@ -87,7 +87,7 @@ public class BlockHeartbeatReporterTest {
   }
 
   /**
-   * Tests the {@link BlockHeartbeatReporter#generateReport()} method that generating a report
+   * Tests the {@link BlockHeartbeatReporter#generateReport(long)} method that generating a report
    * clears the state of the reporter.
    */
   @Test
@@ -96,18 +96,18 @@ public class BlockHeartbeatReporterTest {
     moveBlock(block1, MEM_LOC);
 
     // First report should have updates
-    BlockHeartbeatReport report = mReporter.generateReport();
+    BlockHeartbeatReport report = mReporter.generateReport(0);
     Assert.assertFalse(report.getAddedBlocks().isEmpty());
 
     // Second report should not have updates
-    BlockHeartbeatReport nextReport = mReporter.generateReport();
+    BlockHeartbeatReport nextReport = mReporter.generateReport(0);
     Assert.assertTrue(nextReport.getAddedBlocks().isEmpty());
     Assert.assertTrue(nextReport.getRemovedBlocks().isEmpty());
   }
 
   /**
-   * Tests the {@link BlockHeartbeatReporter#generateReport()} method to correctly generate a report
-   * after removing blocks.
+   * Tests the {@link BlockHeartbeatReporter#generateReport(long)}
+   * method to correctly generate a report after removing blocks.
    */
   @Test
   public void generateReportRemoveTest() {
@@ -117,7 +117,7 @@ public class BlockHeartbeatReporterTest {
     removeBlock(block1);
     removeBlock(block2);
     removeBlock(block3);
-    BlockHeartbeatReport report = mReporter.generateReport();
+    BlockHeartbeatReport report = mReporter.generateReport(0);
 
     // All blocks should be removed
     List<Long> removedBlocks = report.getRemovedBlocks();
@@ -132,8 +132,8 @@ public class BlockHeartbeatReporterTest {
   }
 
   /**
-   * Tests the {@link BlockHeartbeatReporter#generateReport()} method to correctly generate a report
-   * after moving a block and the removing it.
+   * Tests the {@link BlockHeartbeatReporter#generateReport(long)}
+   * method to correctly generate a report after moving a block and the removing it.
    */
   @Test
   public void generateReportMoveThenRemoveTest() {
@@ -142,7 +142,7 @@ public class BlockHeartbeatReporterTest {
     removeBlock(block1);
 
     // The block should not be in the added blocks list
-    BlockHeartbeatReport report = mReporter.generateReport();
+    BlockHeartbeatReport report = mReporter.generateReport(0);
     Assert.assertEquals(null, report.getAddedBlocks().get("MEM"));
 
     // The block should be in the removed blocks list

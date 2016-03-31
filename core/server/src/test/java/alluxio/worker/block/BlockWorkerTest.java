@@ -267,7 +267,7 @@ public class BlockWorkerTest {
   @Test
   public void getReportTest() {
     mBlockWorker.getReport();
-    verify(mHeartbeatReporter).generateReport();
+    verify(mHeartbeatReporter).generateReport(0);
   }
 
   /**

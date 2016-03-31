@@ -34,11 +34,11 @@ public final class RoundRobinPolicyTest {
   public void getWorkerTest() {
     List<BlockWorkerInfo> workerInfoList = Lists.newArrayList();
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost("worker1")
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), Constants.GB, 0, 0));
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost("worker2")
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), 2 * (long) Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), 2 * (long) Constants.GB, 0, 0));
     workerInfoList.add(new BlockWorkerInfo(new WorkerNetAddress().setHost("worker3")
-        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), 3 * (long) Constants.GB, 0));
+        .setRpcPort(PORT).setDataPort(PORT).setWebPort(PORT), 3 * (long) Constants.GB, 0, 0));
     RoundRobinPolicy policy = new RoundRobinPolicy();
 
     Assert.assertNotEquals(

@@ -126,17 +126,20 @@ public final class BlockMasterClient extends AbstractMasterClient {
    * @param usedBytesOnTiers a mapping from storage tier alias to used bytes
    * @param removedBlocks a list of block removed from this worker
    * @param addedBlocks a mapping from storage tier alias to added blocks
+   * @param oldestAccessTime the last access time for the oldest block
    * @return an optional command for the worker to execute
    * @throws ConnectionFailedException if network connection failed
    * @throws IOException if an I/O error occurs
    */
   public synchronized Command heartbeat(final long workerId,
       final Map<String, Long> usedBytesOnTiers, final List<Long> removedBlocks,
-      final Map<String, List<Long>> addedBlocks) throws IOException, ConnectionFailedException {
+      final Map<String, List<Long>> addedBlocks, final long oldestAccessTime)
+          throws IOException, ConnectionFailedException {
     return retryRPC(new RpcCallable<Command>() {
       @Override
       public Command call() throws TException {
-        return mClient.heartbeat(workerId, usedBytesOnTiers, removedBlocks, addedBlocks);
+        return mClient.heartbeat(
+                workerId, usedBytesOnTiers, removedBlocks, addedBlocks, oldestAccessTime);
       }
     });
   }
