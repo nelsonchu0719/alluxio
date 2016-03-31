@@ -48,6 +48,7 @@ public final class WorkerInfo {
     mCapacityBytes = workerInfo.getCapacityBytes();
     mUsedBytes = workerInfo.getUsedBytes();
     mStartTimeMs = workerInfo.getStartTimeMs();
+    mOldestBlockTime = workerInfo.getOldestBlockTime();
   }
 
   /**
