@@ -80,9 +80,10 @@ public final class BlockMover {
   }
 
   /**
+   * @param forceMove force move even if remote worker is out of space
    * @return remote worker address for eviction
    */
-  private static WorkerNetAddress getRemoteWorkerAddress() {
+  private static WorkerNetAddress getRemoteWorkerAddress(long toMoveSize, boolean forceMove) {
     // If remote worker eviction is enabled
     // Get workerInfoList from master
     WorkerNetAddress remoteWorkerAddress = null;
@@ -90,7 +91,7 @@ public final class BlockMover {
       List<BlockWorkerInfo> workerInfos =
               AlluxioWorker.get().getBlockWorker().getWorkerInfoList();
       remoteWorkerAddress = sRemoteEvictionPolicy.getRemoteWorker(
-              workerInfos, AlluxioWorker.get().getNetAddress());
+              workerInfos, AlluxioWorker.get().getNetAddress(), toMoveSize, forceMove);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -112,9 +113,8 @@ public final class BlockMover {
 
     // decide whether or not move the block to remote worker according to
     // last access time
-    if (System.currentTimeMillis() - blockMeta.getLastAccessTime() > sUnusedTimeThreshold) {
-      return;
-    }
+    boolean forceMove =
+            System.currentTimeMillis() - blockMeta.getLastAccessTime() <= sUnusedTimeThreshold;
 
     FileInfo fileInfo = AlluxioWorker.get().getBlockWorker().getFileInfoWithBlock(blockId);
     String   ufsPath       = fileInfo.getUfsPath();
@@ -127,12 +127,12 @@ public final class BlockMover {
       if (sBackgroundEnable) {
         // use background process to move persisted blocks from disk
         mBlockMoverExecutorService.submit(
-                new BlockMoverBackground(blockId, ufsPath, fileBlockSize, toMoveSize));
+                new BlockMoverBackground(blockId, ufsPath, fileBlockSize, toMoveSize, forceMove));
       }
     }
 
     if (sRemoteEvictMemBlocksEnable) {
-      moveBlockFromAlluxioStorage(blockId, blockPath, fileBlockSize, toMoveSize);
+      moveBlockFromAlluxioStorage(blockId, blockPath, fileBlockSize, toMoveSize, forceMove);
     }
   }
 
@@ -145,8 +145,8 @@ public final class BlockMover {
    * @param toMoveSize the size of the block to be moved
    */
   private void moveBlockFromAlluxioStorage(long blockId, String blockPath,
-       long fileBlockSize, long toMoveSize) {
-    WorkerNetAddress remoteAddress = getRemoteWorkerAddress();
+       long fileBlockSize, long toMoveSize, boolean forceMove) {
+    WorkerNetAddress remoteAddress = getRemoteWorkerAddress(toMoveSize, forceMove);
 
     if (remoteAddress == null) {
       return;
@@ -192,24 +192,27 @@ public final class BlockMover {
     // not necessarily have to be the same as the block to be moved
     private final long              mFileBlockSize;
     private final long              mToMoveSize;
+    private final boolean           mForceMove;
 
     /**
      * @param blockId block id
      * @param ufsPath ufs path associated with this block id
      * @param fileBlockSize file block size
      * @param toMoveSize data size to be evicted
+     * @param forceMove force move even if remote worker is out of space
      */
     public BlockMoverBackground(long blockId, String ufsPath,
-        long fileBlockSize, long toMoveSize) {
+        long fileBlockSize, long toMoveSize, boolean forceMove) {
       mBlockId            = blockId;
       mUfsPath            = ufsPath;
       mFileBlockSize      = fileBlockSize;
       mToMoveSize         = toMoveSize;
+      mForceMove          = forceMove;
     }
 
     @Override
     public void run() {
-      WorkerNetAddress remoteAddress = getRemoteWorkerAddress();
+      WorkerNetAddress remoteAddress = getRemoteWorkerAddress(mToMoveSize, mForceMove);
 
       if (remoteAddress == null) {
         return;

@@ -43,10 +43,13 @@ public final class RemoteWorkerEvictionPolicy {
     * Added by Nelson
     * @param workerInfoList the info of the active workers
     * @param excludedAddress the worker with this address is excluded
+    * @param forceMove force move even if remote worker is out of space
     * @return the address of the worker to write to
     */
   public WorkerNetAddress getRemoteWorker(List<BlockWorkerInfo> workerInfoList,
-                                                 WorkerNetAddress excludedAddress) {
+                                          WorkerNetAddress excludedAddress,
+                                          long toMoveSize,
+                                          boolean forceMove) {
     List<BlockWorkerInfo> inputList = Lists.newArrayList(workerInfoList);
     long mostAvailableBytes = -1;
     WorkerNetAddress result = null;
@@ -55,11 +58,13 @@ public final class RemoteWorkerEvictionPolicy {
         // exclude local worker address
         if (((double) workerInfo.getUsedBytes() / workerInfo.getCapacityBytes() * 100)
                 < mThreshold) {
-          // satisfy memory threshold criteria
-          if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > mostAvailableBytes) {
-            // have enough space
-            mostAvailableBytes = workerInfo.getCapacityBytes() - workerInfo.getUsedBytes();
-            result = workerInfo.getNetAddress();
+          if (forceMove || workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
+            // satisfy memory threshold criteria
+            if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > mostAvailableBytes) {
+              // have enough space
+              mostAvailableBytes = workerInfo.getCapacityBytes() - workerInfo.getUsedBytes();
+              result = workerInfo.getNetAddress();
+            }
           }
         }
       }
