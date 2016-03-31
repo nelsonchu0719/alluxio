@@ -57,6 +57,12 @@ public final class RemoteWorkerEvictionPolicy {
 
       // get the worker with the oldest block
       if (workerInfo.getOldestBlockTime() < oldestBlockTime) {
+
+        if (workerInfo.getOldestBlockTime() > 0) {
+          int a = 0;
+          a++;
+        }
+
         oldestBlockTime = workerInfo.getOldestBlockTime();
         oldestBlockWorkerAddress = workerInfo.getNetAddress();
       }
