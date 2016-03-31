@@ -21,6 +21,7 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 public final class BlockMeta extends AbstractBlockMeta {
   private final long mBlockSize;
+  private       long mLastAccessTime = System.currentTimeMillis();
 
   /**
    * Creates a new instance of {@link BlockMeta}.
@@ -53,5 +54,19 @@ public final class BlockMeta extends AbstractBlockMeta {
   @Override
   public String getPath() {
     return commitPath(mDir, mBlockId);
+  }
+
+  /**
+   * update last access time.
+   */
+  public void updateLastAccessTime() {
+    mLastAccessTime = System.currentTimeMillis();
+  }
+
+  /**
+   * @return last access time
+   */
+  public long getLastAccessTime() {
+    return mLastAccessTime;
   }
 }

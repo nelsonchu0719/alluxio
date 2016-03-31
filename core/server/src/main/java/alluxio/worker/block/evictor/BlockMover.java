@@ -50,6 +50,9 @@ public final class BlockMover {
   private static int        sRemoteWorkerMemThreshold   = WorkerContext.getConf()
       .getInt(Constants.WORKER_EVICTOR_REMOTE_EVICT_SPACE_THRESHOLD);
 
+  private static long       sUnusedTimeThreshold = WorkerContext.getConf()
+      .getLong(Constants.WORKER_EVICTOR_REMOTE_EVICT_UNUSED_TIME_THRESHOLD);
+
   private static RemoteWorkerEvictionPolicy sRemoteEvictionPolicy =
       new RemoteWorkerEvictionPolicy(sRemoteWorkerMemThreshold);
 
@@ -104,6 +107,12 @@ public final class BlockMover {
   public void move(long blockId, BlockMeta blockMeta) throws IOException {
     if (!sBackgroundEnable && !sRemoteEvictMemBlocksEnable) {
       // No remote worker eviction allowed.
+      return;
+    }
+
+    // decide whether or not move the block to remote worker according to
+    // last access time
+    if (System.currentTimeMillis() - blockMeta.getLastAccessTime() > sUnusedTimeThreshold) {
       return;
     }
 

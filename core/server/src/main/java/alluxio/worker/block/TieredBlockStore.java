@@ -339,10 +339,15 @@ public final class TieredBlockStore implements BlockStore {
   public void accessBlock(long sessionId, long blockId) throws BlockDoesNotExistException {
     mMetadataReadLock.lock();
     boolean hasBlock = mMetaManager.hasBlockMeta(blockId);
-    mMetadataReadLock.unlock();
     if (!hasBlock) {
+      mMetadataReadLock.unlock();
       throw new BlockDoesNotExistException(ExceptionMessage.NO_BLOCK_ID_FOUND, blockId);
     }
+    // update block last access time.
+    BlockMeta meta = mMetaManager.getBlockMeta(blockId);
+    meta.updateLastAccessTime();
+    mMetadataReadLock.unlock();
+
     synchronized (mBlockStoreEventListeners) {
       for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
         listener.onAccessBlock(sessionId, blockId);
