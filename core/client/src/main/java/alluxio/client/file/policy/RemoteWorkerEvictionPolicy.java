@@ -43,6 +43,7 @@ public final class RemoteWorkerEvictionPolicy {
     * Added by Nelson
     * @param workerInfoList the info of the active workers
     * @param excludedAddress the worker with this address is excluded
+    * @param toMoveSize the block size to be moved
     * @param forceMove force move even if remote worker is out of space
     * @return the address of the worker to write to
     */
