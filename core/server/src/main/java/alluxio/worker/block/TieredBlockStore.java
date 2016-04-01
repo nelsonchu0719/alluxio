@@ -139,7 +139,7 @@ public final class TieredBlockStore implements BlockStore {
 
     mStorageTierAssoc = new WorkerStorageTierAssoc(mConfiguration);
 
-    mGlobalLRUEnabled = mConfiguration.getBoolean("WORKER_EVICTOR_REMOTE_EVICT_GLOBAL_LRU");
+    mGlobalLRUEnabled = mConfiguration.getBoolean(Constants.WORKER_EVICTOR_REMOTE_EVICT_GLOBAL_LRU);
   }
 
   @Override
