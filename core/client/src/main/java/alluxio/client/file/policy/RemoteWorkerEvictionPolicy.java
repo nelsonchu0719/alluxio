@@ -27,12 +27,14 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 public final class RemoteWorkerEvictionPolicy {
   private final double mThreshold;
+  private final boolean mGlobalLRUEnabled;
 
   /**
    * @param threshold remote worker memory utilization threshold
    */
-  public RemoteWorkerEvictionPolicy(double threshold) {
+  public RemoteWorkerEvictionPolicy(double threshold, boolean globalLRUEnabled) {
     mThreshold = threshold;
+    mGlobalLRUEnabled = globalLRUEnabled;
   }
 
   /**
@@ -66,7 +68,8 @@ public final class RemoteWorkerEvictionPolicy {
         if (((double) workerInfo.getUsedBytes() / workerInfo.getCapacityBytes() * 100)
                 < mThreshold) {
           // satisfy memory threshold criteria
-          if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
+          if (!mGlobalLRUEnabled ||
+                  workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
             // have enough free space
             if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > mostAvailableBytes) {
               // have enough capacity
@@ -78,7 +81,7 @@ public final class RemoteWorkerEvictionPolicy {
       }
     }
 
-    if (result == null && forceMove) {
+    if (mGlobalLRUEnabled && result == null && forceMove) {
       if (!oldestBlockWorkerAddress.equals(excludedAddress)) {
         result = oldestBlockWorkerAddress;
       }

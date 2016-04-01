@@ -54,8 +54,11 @@ public final class BlockMover {
   private static long       sUnusedTimeThreshold = WorkerContext.getConf()
       .getLong(Constants.WORKER_EVICTOR_REMOTE_EVICT_UNUSED_TIME_THRESHOLD) * 1000;
 
+  private static boolean    sGlobalLRUEnable = WorkerContext.getConf()
+      .getBoolean(Constants.WORKER_EVICTOR_REMOTE_EVICT_GLOBAL_LRU);
+
   private static RemoteWorkerEvictionPolicy sRemoteEvictionPolicy =
-      new RemoteWorkerEvictionPolicy(sRemoteWorkerMemThreshold);
+      new RemoteWorkerEvictionPolicy(sRemoteWorkerMemThreshold, sGlobalLRUEnable);
 
   private static BlockMover sInstance;
 
