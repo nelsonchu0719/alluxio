@@ -146,7 +146,7 @@ public final class BlockWorkerClientRestServiceHandler {
     try {
       Preconditions.checkNotNull(blockId, "required 'blockId' parameter is missing");
       Preconditions.checkNotNull(sessionId, "required 'sessionId' parameter is missing");
-      mBlockWorker.commitBlock(sessionId, blockId);
+      mBlockWorker.commitBlock(sessionId, blockId, -1);
       return Response.ok().build();
     } catch (AlluxioException | IOException | NullPointerException e) {
       LOG.warn(e.getMessage());

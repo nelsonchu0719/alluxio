@@ -101,7 +101,7 @@ public final class LocalBlockOutStream extends BufferedBlockOutStream {
     mCloser.close();
     if (mWrittenBytes > 0) {
       try {
-        mBlockWorkerClient.cacheBlock(mBlockId);
+        mBlockWorkerClient.cacheBlock(mBlockId, -1);
       } catch (AlluxioException e) {
         throw new IOException(e);
       }

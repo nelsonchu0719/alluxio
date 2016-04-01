@@ -114,11 +114,12 @@ public final class BlockMetadataManager {
    * Commits a temp block.
    *
    * @param tempBlockMeta the meta data of the temp block to commit
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws WorkerOutOfSpaceException when no more space left to hold the block
    * @throws BlockAlreadyExistsException when the block already exists in committed blocks
    * @throws BlockDoesNotExistException when temp block can not be found
    */
-  public void commitTempBlockMeta(TempBlockMeta tempBlockMeta)
+  public void commitTempBlockMeta(TempBlockMeta tempBlockMeta, long lastAccessTime)
       throws WorkerOutOfSpaceException, BlockAlreadyExistsException, BlockDoesNotExistException {
     long blockId = tempBlockMeta.getBlockId();
     if (hasBlockMeta(blockId)) {
@@ -126,7 +127,8 @@ public final class BlockMetadataManager {
       throw new BlockAlreadyExistsException(ExceptionMessage.ADD_EXISTING_BLOCK.getMessage(blockId,
           blockMeta.getBlockLocation().tierAlias()));
     }
-    BlockMeta block = new BlockMeta(Preconditions.checkNotNull(tempBlockMeta));
+    BlockMeta block = new BlockMeta(Preconditions.checkNotNull(tempBlockMeta),
+            lastAccessTime == -1 ? System.currentTimeMillis() : lastAccessTime);
     StorageDir dir = tempBlockMeta.getParentDir();
     dir.removeTempBlockMeta(tempBlockMeta);
     dir.addBlockMeta(block);
@@ -360,7 +362,8 @@ public final class BlockMetadataManager {
     StorageDir dstDir = tempBlockMeta.getParentDir();
     srcDir.removeBlockMeta(blockMeta);
     BlockMeta newBlockMeta =
-        new BlockMeta(blockMeta.getBlockId(), blockMeta.getBlockSize(), dstDir);
+        new BlockMeta(blockMeta.getBlockId(), blockMeta.getBlockSize(),
+                dstDir, blockMeta.getLastAccessTime());
     dstDir.removeTempBlockMeta(tempBlockMeta);
     dstDir.addBlockMeta(newBlockMeta);
     return newBlockMeta;
@@ -414,7 +417,8 @@ public final class BlockMetadataManager {
     }
     StorageDir oldDir = blockMeta.getParentDir();
     oldDir.removeBlockMeta(blockMeta);
-    BlockMeta newBlockMeta = new BlockMeta(blockMeta.getBlockId(), blockSize, newDir);
+    BlockMeta newBlockMeta = new BlockMeta(
+            blockMeta.getBlockId(), blockSize, newDir, blockMeta.getLastAccessTime());
     newDir.addBlockMeta(newBlockMeta);
     return newBlockMeta;
   }

@@ -77,19 +77,19 @@ public class BlockMetaTest {
   @Test
   public void getBlockSizeTest() throws IOException {
     // With the block file not really existing, expect committed block size to be zero.
-    mBlockMeta = new BlockMeta(mTempBlockMeta);
+    mBlockMeta = new BlockMeta(mTempBlockMeta, 0);
     Assert.assertEquals(0, mBlockMeta.getBlockSize());
 
     // With the block file partially written, expect committed block size equals real file size.
     byte[] buf = BufferUtils.getIncreasingByteArray((int) TEST_BLOCK_SIZE - 1);
     BufferUtils.writeBufferToFile(mTempBlockMeta.getCommitPath(), buf);
-    mBlockMeta = new BlockMeta(mTempBlockMeta);
+    mBlockMeta = new BlockMeta(mTempBlockMeta, 0);
     Assert.assertEquals(TEST_BLOCK_SIZE - 1, mBlockMeta.getBlockSize());
 
     // With the block file fully written, expect committed block size equals target block size.
     buf = BufferUtils.getIncreasingByteArray((int) TEST_BLOCK_SIZE);
     BufferUtils.writeBufferToFile(mTempBlockMeta.getCommitPath(), buf);
-    mBlockMeta = new BlockMeta(mTempBlockMeta);
+    mBlockMeta = new BlockMeta(mTempBlockMeta, 0);
     Assert.assertEquals(TEST_BLOCK_SIZE, mBlockMeta.getBlockSize());
   }
 
@@ -98,7 +98,7 @@ public class BlockMetaTest {
    */
   @Test
   public void getPathTest() {
-    mBlockMeta = new BlockMeta(mTempBlockMeta);
+    mBlockMeta = new BlockMeta(mTempBlockMeta, 0);
     Assert.assertEquals(PathUtils.concatPath(mTestDirPath, TEST_BLOCK_ID), mBlockMeta.getPath());
   }
 }

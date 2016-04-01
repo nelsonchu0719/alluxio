@@ -142,7 +142,7 @@ public class BaseAllocatorTest {
       Assert.assertTrue(pTier.getTierAlias() == tierAlias);
 
       //update the dir meta info
-      pDir.addBlockMeta(new BlockMeta(mTestBlockId, blockSize, pDir));
+      pDir.addBlockMeta(new BlockMeta(mTestBlockId, blockSize, pDir, 0));
     }
   }
 

@@ -145,13 +145,15 @@ interface BlockStore {
    *
    * @param sessionId the id of the session
    * @param blockId the id of a temp block
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws BlockAlreadyExistsException if block id already exists in committed blocks
    * @throws BlockDoesNotExistException if the temporary block can not be found
    * @throws InvalidWorkerStateException if block id does not belong to session id
    * @throws IOException if the block can not be moved from temporary path to committed path
    * @throws WorkerOutOfSpaceException if there is no more space left to hold the block
    */
-  void commitBlock(long sessionId, long blockId) throws BlockAlreadyExistsException,
+  void commitBlock(long sessionId, long blockId, long lastAccessTime)
+          throws BlockAlreadyExistsException,
       BlockDoesNotExistException, InvalidWorkerStateException, IOException,
       WorkerOutOfSpaceException;
 

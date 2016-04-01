@@ -199,7 +199,7 @@ public final class BlockMetadataManagerTest {
     Assert.assertTrue(mMetaManager.hasTempBlockMeta(TEST_TEMP_BLOCK_ID));
     Assert.assertFalse(mMetaManager.hasBlockMeta(TEST_TEMP_BLOCK_ID));
     // Commit temp block
-    mMetaManager.commitTempBlockMeta(tempBlockMeta);
+    mMetaManager.commitTempBlockMeta(tempBlockMeta, 0);
     Assert.assertFalse(mMetaManager.hasTempBlockMeta(TEST_TEMP_BLOCK_ID));
     Assert.assertTrue(mMetaManager.hasBlockMeta(TEST_TEMP_BLOCK_ID));
     // Get block
@@ -255,7 +255,7 @@ public final class BlockMetadataManagerTest {
     mMetaManager.addTempBlockMeta(tempBlockMeta2);
 
     // commit the first temp block meta
-    mMetaManager.commitTempBlockMeta(tempBlockMeta1);
+    mMetaManager.commitTempBlockMeta(tempBlockMeta1, 0);
     BlockMeta blockMeta = mMetaManager.getBlockMeta(TEST_TEMP_BLOCK_ID);
 
     mMetaManager.moveBlockMeta(blockMeta, tempBlockMeta2);
@@ -287,7 +287,7 @@ public final class BlockMetadataManagerTest {
     mMetaManager.addTempBlockMeta(tempBlockMeta2);
 
     // commit the first temp block meta
-    mMetaManager.commitTempBlockMeta(tempBlockMeta1);
+    mMetaManager.commitTempBlockMeta(tempBlockMeta1, 0);
     BlockMeta blockMeta = mMetaManager.getBlockMeta(TEST_TEMP_BLOCK_ID);
 
     mMetaManager.moveBlockMeta(blockMeta, tempBlockMeta2);
@@ -315,7 +315,7 @@ public final class BlockMetadataManagerTest {
     StorageDir dir2 = mMetaManager.getTier("HDD").getDir(1);
     long maxHddDir1Capacity = TIER_CAPACITY_BYTES[1][0];
     long blockMetaSize = maxHddDir1Capacity + 1;
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, blockMetaSize, dir2);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, blockMetaSize, dir2, 0);
     TempBlockMeta tempBlockMeta2 =
         new TempBlockMeta(TEST_SESSION_ID, TEST_TEMP_BLOCK_ID2, TEST_BLOCK_SIZE, dir1);
     mMetaManager.addTempBlockMeta(tempBlockMeta2);
@@ -338,7 +338,7 @@ public final class BlockMetadataManagerTest {
     TempBlockMeta tempBlockMeta =
         new TempBlockMeta(TEST_SESSION_ID, TEST_TEMP_BLOCK_ID, TEST_BLOCK_SIZE, dir);
     mMetaManager.addTempBlockMeta(tempBlockMeta);
-    mMetaManager.commitTempBlockMeta(tempBlockMeta);
+    mMetaManager.commitTempBlockMeta(tempBlockMeta, 0);
     BlockMeta blockMeta = mMetaManager.getBlockMeta(TEST_TEMP_BLOCK_ID);
 
     // Move to anywhere
@@ -364,7 +364,7 @@ public final class BlockMetadataManagerTest {
   @Test
   public void moveBlockMetaDeprecatedExceedCapacityTest() throws Exception {
     StorageDir dir = mMetaManager.getTier("HDD").getDir(0);
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, 2000, dir);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, 2000, dir, 0);
     dir.addBlockMeta(blockMeta);
 
     mThrown.expect(WorkerOutOfSpaceException.class);
@@ -405,7 +405,7 @@ public final class BlockMetadataManagerTest {
         new TempBlockMeta(sessionId1, tempBlockId2, TEST_BLOCK_SIZE, dir);
     TempBlockMeta tempBlockMeta3 =
         new TempBlockMeta(sessionId2, tempBlockId3, TEST_BLOCK_SIZE, dir);
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir, 0);
     dir.addTempBlockMeta(tempBlockMeta1);
     dir.addTempBlockMeta(tempBlockMeta2);
     dir.addTempBlockMeta(tempBlockMeta3);

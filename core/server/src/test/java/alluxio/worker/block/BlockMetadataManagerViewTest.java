@@ -168,7 +168,7 @@ public final class BlockMetadataManagerViewTest {
     StorageDir dir = mMetaManager.getTiers().get(TEST_TIER_ORDINAL).getDir(TEST_DIR);
 
     // Add one block to test dir, expect block meta found
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir, 0);
     dir.addBlockMeta(blockMeta);
     Assert.assertEquals(blockMeta, mMetaManagerView.getBlockMeta(TEST_BLOCK_ID));
     Assert.assertTrue(mMetaManagerView.isBlockEvictable(TEST_BLOCK_ID));
@@ -256,7 +256,7 @@ public final class BlockMetadataManagerViewTest {
 
     // Do some operations on metadata
     StorageDir dir = mMetaManager.getTiers().get(TEST_TIER_ORDINAL).getDir(TEST_DIR);
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir, 0);
     try {
       dir.addBlockMeta(blockMeta);
     } catch (Exception e) {
@@ -278,7 +278,7 @@ public final class BlockMetadataManagerViewTest {
 
     // Do some operations on metadata
     StorageDir dir = mMetaManager.getTiers().get(TEST_TIER_ORDINAL + 1).getDir(TEST_DIR);
-    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir);
+    BlockMeta blockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, dir, 0);
     try {
       dir.addBlockMeta(blockMeta);
     } catch (Exception e) {

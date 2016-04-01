@@ -133,14 +133,16 @@ public final class BlockWorkerClient extends AbstractClient {
    * Notifies the worker the block is cached.
    *
    * @param blockId The id of the block
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws IOException if an I/O error occurs
    * @throws AlluxioException if an Alluxio error occurs
    */
-  public synchronized void cacheBlock(final long blockId) throws IOException, AlluxioException {
+  public synchronized void cacheBlock(final long blockId, final long lastAccessTime)
+          throws IOException, AlluxioException {
     retryRPC(new RpcCallableThrowsAlluxioTException<Void>() {
       @Override
       public Void call() throws AlluxioTException, TException {
-        mClient.cacheBlock(mSessionId, blockId);
+        mClient.cacheBlock(mSessionId, blockId, lastAccessTime);
         return null;
       }
     });

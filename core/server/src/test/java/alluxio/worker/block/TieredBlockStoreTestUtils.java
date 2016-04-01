@@ -263,7 +263,7 @@ public class TieredBlockStoreTestUtils {
 
     // commit block
     FileUtils.move(tempBlockMeta.getPath(), tempBlockMeta.getCommitPath());
-    meta.commitTempBlockMeta(tempBlockMeta);
+    meta.commitTempBlockMeta(tempBlockMeta, 0);
 
     // update evictor
     if (evictor instanceof BlockStoreEventListener) {
@@ -292,7 +292,7 @@ public class TieredBlockStoreTestUtils {
     writer.close();
 
     // commit block
-    blockStore.commitBlock(sessionId, blockId);
+    blockStore.commitBlock(sessionId, blockId, 0);
   }
 
   /**

@@ -114,7 +114,7 @@ public class BlockWorkerClientRestApiTest {
         .newWorkerTestCase(getEndpoint(BlockWorkerClientRestServiceHandler.CACHE_BLOCK), params,
             "POST", "", mResource).run();
 
-    Mockito.verify(sBlockWorker).commitBlock(Mockito.anyLong(), Mockito.anyLong());
+    Mockito.verify(sBlockWorker).commitBlock(Mockito.anyLong(), Mockito.anyLong(), 0);
   }
 
   @Test

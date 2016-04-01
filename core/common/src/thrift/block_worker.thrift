@@ -27,7 +27,8 @@ service BlockWorkerClientService extends common.AlluxioService {
    * information to master.
    */
   void cacheBlock( /** the id of the current session */ 1: i64 sessionId,
-      /** the id of the block being accessed */ 2: i64 blockId)
+      /** the id of the block being accessed */ 2: i64 blockId,
+      /** last access time, -1 means committed by client */ 3: i64 lastAccessTime)
     throws (1: exception.AlluxioTException e, 2: exception.ThriftIOException ioe)
 
   /**

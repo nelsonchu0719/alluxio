@@ -29,6 +29,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 public final class RemoteBlockOutStream extends BufferedBlockOutStream {
   private final RemoteBlockWriter mRemoteWriter;
   private final BlockWorkerClient mBlockWorkerClient;
+  private       boolean           mIsEviction = false;
+  // default is -1, meaning committed by client
+  private       long              mLastAccessTime = -1;
 
   /**
    * Creates a new block output stream.
@@ -57,14 +60,16 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
    * @param blockId the block id
    * @param blockSize the block size
    * @param address the address of the preferred worker
-   * @param isEviction true if this output stream is for worker eviction
+   * @param lastAccessTime last access time
    * @throws IOException if I/O error occurs
    */
   public RemoteBlockOutStream(long blockId, long blockSize, WorkerNetAddress address,
-      boolean isEviction)
+       long lastAccessTime)
           throws IOException {
     this(blockId, blockSize, address);
-    mRemoteWriter.setEviction(isEviction);
+    mIsEviction = true;
+    mRemoteWriter.setEviction(mIsEviction);
+    mLastAccessTime = lastAccessTime;
   }
 
   /**
@@ -116,7 +121,7 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
     mRemoteWriter.close();
     if (mFlushedBytes > 0) {
       try {
-        mBlockWorkerClient.cacheBlock(mBlockId);
+        mBlockWorkerClient.cacheBlock(mBlockId, mLastAccessTime);
       } catch (AlluxioException e) {
         throw new IOException(e);
       }

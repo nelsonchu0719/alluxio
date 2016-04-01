@@ -30,6 +30,7 @@ import alluxio.worker.block.evictor.BlockMover;
 import alluxio.worker.block.evictor.BlockTransferInfo;
 import alluxio.worker.block.evictor.EvictionPlan;
 import alluxio.worker.block.evictor.Evictor;
+import alluxio.worker.block.evictor.LRUEvictor;
 import alluxio.worker.block.io.BlockReader;
 import alluxio.worker.block.io.BlockWriter;
 import alluxio.worker.block.io.LocalFileBlockReader;
@@ -42,6 +43,7 @@ import alluxio.worker.block.meta.TempBlockMeta;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -243,11 +245,35 @@ public final class TieredBlockStore implements BlockStore {
   }
 
   @Override
-  public void commitBlock(long sessionId, long blockId) throws BlockAlreadyExistsException,
+  public void commitBlock(long sessionId, long blockId, long lastAccessTime)
+          throws BlockAlreadyExistsException,
       InvalidWorkerStateException, BlockDoesNotExistException, IOException {
-    BlockStoreLocation loc = commitBlockInternal(sessionId, blockId);
+    BlockStoreLocation loc = commitBlockInternal(sessionId, blockId, lastAccessTime);
     synchronized (mBlockStoreEventListeners) {
       for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
+        if ((listener instanceof LRUEvictor) && lastAccessTime != -1) {
+          mMetadataReadLock.lock();
+          Map<Long, Boolean> oldLRUCache = ((LRUEvictor) listener).getLRUCache();
+          Map<Long, Boolean> newLRUCache = ((LRUEvictor) listener).getEmptyLRUCache();
+
+          List<Long> allBlocks = Lists.newArrayList(oldLRUCache.keySet());
+          int index = 0;
+          for (; index < allBlocks.size(); index++) {
+            long time = mMetaManager.getBlockMeta(allBlocks.get(index)).getLastAccessTime();
+            if (time > lastAccessTime) {
+              break;
+            }
+            newLRUCache.put(allBlocks.get(index), true);
+          }
+          newLRUCache.put(blockId, true);
+          for (; index < allBlocks.size(); index++) {
+            newLRUCache.put(allBlocks.get(index), true);
+          }
+
+          ((LRUEvictor) listener).setLRUCache(newLRUCache);
+          mMetadataReadLock.unlock();
+          continue;
+        }
         listener.onCommitBlock(sessionId, blockId, loc);
       }
     }
@@ -513,13 +539,14 @@ public final class TieredBlockStore implements BlockStore {
    *
    * @param sessionId the id of session
    * @param blockId the id of block
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws BlockDoesNotExistException if block id can not be found in temporary blocks
    * @throws BlockAlreadyExistsException if block id already exists in committed blocks
    * @throws InvalidWorkerStateException if block id is not owned by session id
    * @throws IOException if I/O errors occur when deleting the block file
    * @return destination location to move the block
    */
-  private BlockStoreLocation commitBlockInternal(long sessionId, long blockId)
+  private BlockStoreLocation commitBlockInternal(long sessionId, long blockId, long lastAccessTime)
       throws BlockAlreadyExistsException, InvalidWorkerStateException, BlockDoesNotExistException,
       IOException {
     long lockId = mLockManager.lockBlock(sessionId, blockId, BlockLockType.WRITE);
@@ -547,7 +574,7 @@ public final class TieredBlockStore implements BlockStore {
 
       mMetadataWriteLock.lock();
       try {
-        mMetaManager.commitTempBlockMeta(tempBlockMeta);
+        mMetaManager.commitTempBlockMeta(tempBlockMeta, lastAccessTime);
       } catch (BlockAlreadyExistsException e) {
         throw Throwables.propagate(e); // we shall never reach here
       } catch (BlockDoesNotExistException e) {

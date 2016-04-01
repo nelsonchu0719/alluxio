@@ -86,13 +86,15 @@ public final class BlockWorkerClientServiceHandler implements BlockWorkerClientS
    *
    * @param sessionId the id of the client requesting the commit
    * @param blockId the id of the block to commit
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws AlluxioTException if an Alluxio error occurs
    * @throws ThriftIOException if an I/O error occurs
    */
   @Override
-  public void cacheBlock(long sessionId, long blockId) throws AlluxioTException, ThriftIOException {
+  public void cacheBlock(long sessionId, long blockId, long lastAccessTime)
+          throws AlluxioTException, ThriftIOException {
     try {
-      mWorker.commitBlock(sessionId, blockId);
+      mWorker.commitBlock(sessionId, blockId, lastAccessTime);
     } catch (IOException e) {
       throw new ThriftIOException(e.getMessage());
     } catch (AlluxioException e) {

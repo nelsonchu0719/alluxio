@@ -118,22 +118,25 @@ public final class BlockMover {
             System.currentTimeMillis() - blockMeta.getLastAccessTime() <= sUnusedTimeThreshold;
 
     FileInfo fileInfo = AlluxioWorker.get().getBlockWorker().getFileInfoWithBlock(blockId);
-    String   ufsPath       = fileInfo.getUfsPath();
-    String   blockPath     = blockMeta.getPath();
-    long     fileBlockSize = fileInfo.getBlockSizeBytes();
-    long     toMoveSize    = blockMeta.getBlockSize();
-    boolean  isPersisted   = fileInfo.isPersisted();
+    String   ufsPath        = fileInfo.getUfsPath();
+    String   blockPath      = blockMeta.getPath();
+    long     fileBlockSize  = fileInfo.getBlockSizeBytes();
+    long     toMoveSize     = blockMeta.getBlockSize();
+    boolean  isPersisted    = fileInfo.isPersisted();
+    long     lastAccessTime = blockMeta.getLastAccessTime();
 
     if (isPersisted) {
       if (sBackgroundEnable) {
         // use background process to move persisted blocks from disk
         mBlockMoverExecutorService.submit(
-                new BlockMoverBackground(blockId, ufsPath, fileBlockSize, toMoveSize, forceMove));
+                new BlockMoverBackground(
+                        blockId, ufsPath, fileBlockSize, toMoveSize, forceMove, lastAccessTime));
       }
     }
 
     if (sRemoteEvictMemBlocksEnable) {
-      moveBlockFromAlluxioStorage(blockId, blockPath, fileBlockSize, toMoveSize, forceMove);
+      moveBlockFromAlluxioStorage(
+              blockId, blockPath, fileBlockSize, toMoveSize, forceMove, lastAccessTime);
     }
   }
 
@@ -144,9 +147,10 @@ public final class BlockMover {
    * @param blockPath alluxio storage path associated with this block
    * @param fileBlockSize file block size
    * @param toMoveSize the size of the block to be moved
+   * @param lastAccessTime last access time
    */
   private void moveBlockFromAlluxioStorage(long blockId, String blockPath,
-       long fileBlockSize, long toMoveSize, boolean forceMove) {
+       long fileBlockSize, long toMoveSize, boolean forceMove, long lastAccessTime) {
     WorkerNetAddress remoteAddress = getRemoteWorkerAddress(toMoveSize, forceMove);
 
     if (remoteAddress == null) {
@@ -160,7 +164,7 @@ public final class BlockMover {
                  new LocalFileBlockReader(blockPath);
          RemoteBlockOutStream os =
                  new RemoteBlockOutStream(
-                         blockId, fileBlockSize, remoteAddress, true)) {
+                         blockId, fileBlockSize, remoteAddress, lastAccessTime)) {
       long pos = 0;
       byte[] bytes = new byte[BUF_LIMIT];
       try {
@@ -194,6 +198,7 @@ public final class BlockMover {
     private final long              mFileBlockSize;
     private final long              mToMoveSize;
     private final boolean           mForceMove;
+    private final long              mLastAccessTime;
 
     /**
      * @param blockId block id
@@ -201,14 +206,16 @@ public final class BlockMover {
      * @param fileBlockSize file block size
      * @param toMoveSize data size to be evicted
      * @param forceMove force move even if remote worker is out of space
+     * @param lastAccessTime last access time
      */
     public BlockMoverBackground(long blockId, String ufsPath,
-        long fileBlockSize, long toMoveSize, boolean forceMove) {
+        long fileBlockSize, long toMoveSize, boolean forceMove, long lastAccessTime) {
       mBlockId            = blockId;
       mUfsPath            = ufsPath;
       mFileBlockSize      = fileBlockSize;
       mToMoveSize         = toMoveSize;
       mForceMove          = forceMove;
+      mLastAccessTime     = lastAccessTime;
     }
 
     @Override
@@ -223,7 +230,8 @@ public final class BlockMover {
       try (BlockInStream          is =
                    new UnderStoreBlockInStream(blockStart, mFileBlockSize, mUfsPath);
            RemoteBlockOutStream   os =
-                   new RemoteBlockOutStream(mBlockId, mFileBlockSize, remoteAddress, true)) {
+                   new RemoteBlockOutStream(
+                           mBlockId, mFileBlockSize, remoteAddress, mLastAccessTime)) {
         int  readLen;
         long remain = mToMoveSize;
         int  sendLen;

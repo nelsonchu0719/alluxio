@@ -295,16 +295,17 @@ public final class BlockWorker extends AbstractWorker {
    *
    * @param sessionId the id of the client
    * @param blockId the id of the block to commit
+   * @param lastAccessTime last access time, -1 means committed by client
    * @throws BlockAlreadyExistsException if blockId already exists in committed blocks
    * @throws BlockDoesNotExistException if the temporary block cannot be found
    * @throws InvalidWorkerStateException if blockId does not belong to sessionId
    * @throws IOException if the block cannot be moved from temporary path to committed path
    * @throws WorkerOutOfSpaceException if there is no more space left to hold the block
    */
-  public void commitBlock(long sessionId, long blockId)
+  public void commitBlock(long sessionId, long blockId, long lastAccessTime)
       throws BlockAlreadyExistsException, BlockDoesNotExistException, InvalidWorkerStateException,
       IOException, WorkerOutOfSpaceException {
-    mBlockStore.commitBlock(sessionId, blockId);
+    mBlockStore.commitBlock(sessionId, blockId, lastAccessTime);
 
     // TODO(calvin): Reconsider how to do this without heavy locking.
     // Block successfully committed, update master with new block metadata

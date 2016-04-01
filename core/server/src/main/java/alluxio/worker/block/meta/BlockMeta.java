@@ -29,21 +29,25 @@ public final class BlockMeta extends AbstractBlockMeta {
    * @param blockId the block id
    * @param blockSize the block size
    * @param dir the parent directory
+   * @param lastAccessTime last access time
    */
-  public BlockMeta(long blockId, long blockSize, StorageDir dir) {
+  public BlockMeta(long blockId, long blockSize, StorageDir dir, long lastAccessTime) {
     super(blockId, dir);
     mBlockSize = blockSize;
+    mLastAccessTime = lastAccessTime;
   }
 
   /**
    * Creates a new instance of {@link BlockMeta} from {@link TempBlockMeta}.
    *
    * @param tempBlock uncommitted block metadata
+   * @param lastAccessTime last access time
    */
-  public BlockMeta(TempBlockMeta tempBlock) {
+  public BlockMeta(TempBlockMeta tempBlock, long lastAccessTime) {
     super(tempBlock.getBlockId(), tempBlock.getParentDir());
     // NOTE: TempBlockMeta must be committed after the actual data block file is moved.
     mBlockSize = new File(tempBlock.getCommitPath()).length();
+    mLastAccessTime = lastAccessTime;
   }
 
   @Override

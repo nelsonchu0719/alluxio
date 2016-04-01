@@ -117,4 +117,27 @@ public class LRUEvictor extends AbstractEvictor {
 
     return rtn;
   }
+
+  /**
+   * @return LRU cache
+   */
+  public Map<Long, Boolean> getLRUCache() {
+    return mLRUCache;
+  }
+
+  /**
+   * @return an empty lru cache
+   */
+  public Map<Long, Boolean> getEmptyLRUCache() {
+    return Collections.synchronizedMap(new LinkedHashMap<Long, Boolean>(
+            LINKED_HASH_MAP_INIT_CAPACITY, LINKED_HASH_MAP_INIT_LOAD_FACTOR,
+            LINKED_HASH_MAP_ACCESS_ORDERED));
+  }
+
+  /**
+   * @param LRUCache LRU cache
+   */
+  public void setLRUCache(Map<Long, Boolean> LRUCache) {
+    mLRUCache = LRUCache;
+  }
 }

@@ -182,7 +182,7 @@ public class BlockWorkerTest {
     when(blockMeta.getBlockSize()).thenReturn(length);
     when(blockStoreMeta.getUsedBytesOnTiers()).thenReturn(usedBytesOnTiers);
 
-    mBlockWorker.commitBlock(sessionId, blockId);
+    mBlockWorker.commitBlock(sessionId, blockId, 0);
     verify(mBlockMasterClient).commitBlock(mWorkerId, usedBytes,
         tierAlias, blockId, length);
     verify(mBlockStore).unlockBlock(lockId);
@@ -372,7 +372,7 @@ public class BlockWorkerTest {
     long blockSize = mRandom.nextLong();
     StorageDir storageDir = Mockito.mock(StorageDir.class);
     when(storageDir.getDirPath()).thenReturn("/tmp");
-    BlockMeta meta = new BlockMeta(blockId, blockSize, storageDir);
+    BlockMeta meta = new BlockMeta(blockId, blockSize, storageDir, 0);
     when(mBlockStore.getBlockMeta(sessionId, blockId, lockId)).thenReturn(meta);
 
     mBlockWorker.readBlock(sessionId, blockId, lockId);

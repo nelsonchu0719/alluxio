@@ -177,7 +177,7 @@ public final class TieredBlockStoreTest {
   }
 
   /**
-   * Testssthe {@link TieredBlockStore#commitBlock(long, long)} method.
+   * Testssthe {@link TieredBlockStore#commitBlock(long, long, long)} method.
    *
    * @throws Exception if commiting the block fails
    */
@@ -185,7 +185,7 @@ public final class TieredBlockStoreTest {
   public void commitBlockTest() throws Exception {
     TieredBlockStoreTestUtils.createTempBlock(SESSION_ID1, TEMP_BLOCK_ID, BLOCK_SIZE, mTestDir1);
     Assert.assertFalse(mBlockStore.hasBlockMeta(TEMP_BLOCK_ID));
-    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID);
+    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID, 0);
     Assert.assertTrue(mBlockStore.hasBlockMeta(TEMP_BLOCK_ID));
     Assert.assertFalse(
         FileUtils.exists(TempBlockMeta.tempPath(mTestDir1, SESSION_ID1, TEMP_BLOCK_ID)));
@@ -518,7 +518,7 @@ public final class TieredBlockStoreTest {
     mThrown.expectMessage(ExceptionMessage.TEMP_BLOCK_ID_COMMITTED.getMessage(TEMP_BLOCK_ID));
 
     TieredBlockStoreTestUtils.createTempBlock(SESSION_ID1, TEMP_BLOCK_ID, BLOCK_SIZE, mTestDir1);
-    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID);
+    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID, 0);
     mBlockStore.abortBlock(SESSION_ID1, TEMP_BLOCK_ID);
   }
 
@@ -594,8 +594,8 @@ public final class TieredBlockStoreTest {
     mThrown.expectMessage(ExceptionMessage.TEMP_BLOCK_ID_COMMITTED.getMessage(TEMP_BLOCK_ID));
 
     TieredBlockStoreTestUtils.createTempBlock(SESSION_ID1, TEMP_BLOCK_ID, BLOCK_SIZE, mTestDir1);
-    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID);
-    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID);
+    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID, 0);
+    mBlockStore.commitBlock(SESSION_ID1, TEMP_BLOCK_ID, 0);
   }
 
   /**
@@ -608,7 +608,7 @@ public final class TieredBlockStoreTest {
     mThrown.expect(BlockDoesNotExistException.class);
     mThrown.expectMessage(ExceptionMessage.TEMP_BLOCK_META_NOT_FOUND.getMessage(BLOCK_ID1));
 
-    mBlockStore.commitBlock(SESSION_ID1, BLOCK_ID1);
+    mBlockStore.commitBlock(SESSION_ID1, BLOCK_ID1, 0);
   }
 
   /**
@@ -624,7 +624,7 @@ public final class TieredBlockStoreTest {
         SESSION_ID1, SESSION_ID2));
 
     TieredBlockStoreTestUtils.createTempBlock(SESSION_ID1, TEMP_BLOCK_ID, BLOCK_SIZE, mTestDir1);
-    mBlockStore.commitBlock(SESSION_ID2, TEMP_BLOCK_ID);
+    mBlockStore.commitBlock(SESSION_ID2, TEMP_BLOCK_ID, 0);
   }
 
   /**

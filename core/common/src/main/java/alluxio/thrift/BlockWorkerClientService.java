@@ -61,8 +61,10 @@ public class BlockWorkerClientService {
      * @param sessionId the id of the current session
      * 
      * @param blockId the id of the block being accessed
+     * 
+     * @param lastAccessTime last access time, -1 means committed by client
      */
-    public void cacheBlock(long sessionId, long blockId) throws alluxio.thrift.AlluxioTException, alluxio.thrift.ThriftIOException, org.apache.thrift.TException;
+    public void cacheBlock(long sessionId, long blockId, long lastAccessTime) throws alluxio.thrift.AlluxioTException, alluxio.thrift.ThriftIOException, org.apache.thrift.TException;
 
     /**
      * Used to cancel a block which is being written. worker will delete the temporary block file and
@@ -151,7 +153,7 @@ public class BlockWorkerClientService {
 
     public void asyncCheckpoint(long fileId, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
-    public void cacheBlock(long sessionId, long blockId, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+    public void cacheBlock(long sessionId, long blockId, long lastAccessTime, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
     public void cancelBlock(long sessionId, long blockId, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
@@ -235,17 +237,18 @@ public class BlockWorkerClientService {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "asyncCheckpoint failed: unknown result");
     }
 
-    public void cacheBlock(long sessionId, long blockId) throws alluxio.thrift.AlluxioTException, alluxio.thrift.ThriftIOException, org.apache.thrift.TException
+    public void cacheBlock(long sessionId, long blockId, long lastAccessTime) throws alluxio.thrift.AlluxioTException, alluxio.thrift.ThriftIOException, org.apache.thrift.TException
     {
-      send_cacheBlock(sessionId, blockId);
+      send_cacheBlock(sessionId, blockId, lastAccessTime);
       recv_cacheBlock();
     }
 
-    public void send_cacheBlock(long sessionId, long blockId) throws org.apache.thrift.TException
+    public void send_cacheBlock(long sessionId, long blockId, long lastAccessTime) throws org.apache.thrift.TException
     {
       cacheBlock_args args = new cacheBlock_args();
       args.setSessionId(sessionId);
       args.setBlockId(blockId);
+      args.setLastAccessTime(lastAccessTime);
       sendBase("cacheBlock", args);
     }
 
@@ -531,9 +534,9 @@ public class BlockWorkerClientService {
       }
     }
 
-    public void cacheBlock(long sessionId, long blockId, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+    public void cacheBlock(long sessionId, long blockId, long lastAccessTime, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      cacheBlock_call method_call = new cacheBlock_call(sessionId, blockId, resultHandler, this, ___protocolFactory, ___transport);
+      cacheBlock_call method_call = new cacheBlock_call(sessionId, blockId, lastAccessTime, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
@@ -541,10 +544,12 @@ public class BlockWorkerClientService {
     public static class cacheBlock_call extends org.apache.thrift.async.TAsyncMethodCall {
       private long sessionId;
       private long blockId;
-      public cacheBlock_call(long sessionId, long blockId, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private long lastAccessTime;
+      public cacheBlock_call(long sessionId, long blockId, long lastAccessTime, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.sessionId = sessionId;
         this.blockId = blockId;
+        this.lastAccessTime = lastAccessTime;
       }
 
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
@@ -552,6 +557,7 @@ public class BlockWorkerClientService {
         cacheBlock_args args = new cacheBlock_args();
         args.setSessionId(sessionId);
         args.setBlockId(blockId);
+        args.setLastAccessTime(lastAccessTime);
         args.write(prot);
         prot.writeMessageEnd();
       }
@@ -901,7 +907,7 @@ public class BlockWorkerClientService {
       public cacheBlock_result getResult(I iface, cacheBlock_args args) throws org.apache.thrift.TException {
         cacheBlock_result result = new cacheBlock_result();
         try {
-          iface.cacheBlock(args.sessionId, args.blockId);
+          iface.cacheBlock(args.sessionId, args.blockId, args.lastAccessTime);
         } catch (alluxio.thrift.AlluxioTException e) {
           result.e = e;
         } catch (alluxio.thrift.ThriftIOException ioe) {
@@ -1271,7 +1277,7 @@ public class BlockWorkerClientService {
       }
 
       public void start(I iface, cacheBlock_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
-        iface.cacheBlock(args.sessionId, args.blockId,resultHandler);
+        iface.cacheBlock(args.sessionId, args.blockId, args.lastAccessTime,resultHandler);
       }
     }
 
@@ -3137,6 +3143,7 @@ public class BlockWorkerClientService {
 
     private static final org.apache.thrift.protocol.TField SESSION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("sessionId", org.apache.thrift.protocol.TType.I64, (short)1);
     private static final org.apache.thrift.protocol.TField BLOCK_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("blockId", org.apache.thrift.protocol.TType.I64, (short)2);
+    private static final org.apache.thrift.protocol.TField LAST_ACCESS_TIME_FIELD_DESC = new org.apache.thrift.protocol.TField("lastAccessTime", org.apache.thrift.protocol.TType.I64, (short)3);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
     static {
@@ -3146,6 +3153,7 @@ public class BlockWorkerClientService {
 
     private long sessionId; // required
     private long blockId; // required
+    private long lastAccessTime; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -3156,7 +3164,11 @@ public class BlockWorkerClientService {
       /**
        * the id of the block being accessed
        */
-      BLOCK_ID((short)2, "blockId");
+      BLOCK_ID((short)2, "blockId"),
+      /**
+       * last access time, -1 means committed by client
+       */
+      LAST_ACCESS_TIME((short)3, "lastAccessTime");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -3175,6 +3187,8 @@ public class BlockWorkerClientService {
             return SESSION_ID;
           case 2: // BLOCK_ID
             return BLOCK_ID;
+          case 3: // LAST_ACCESS_TIME
+            return LAST_ACCESS_TIME;
           default:
             return null;
         }
@@ -3217,6 +3231,7 @@ public class BlockWorkerClientService {
     // isset id assignments
     private static final int __SESSIONID_ISSET_ID = 0;
     private static final int __BLOCKID_ISSET_ID = 1;
+    private static final int __LASTACCESSTIME_ISSET_ID = 2;
     private byte __isset_bitfield = 0;
     public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
@@ -3224,6 +3239,8 @@ public class BlockWorkerClientService {
       tmpMap.put(_Fields.SESSION_ID, new org.apache.thrift.meta_data.FieldMetaData("sessionId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
       tmpMap.put(_Fields.BLOCK_ID, new org.apache.thrift.meta_data.FieldMetaData("blockId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
+      tmpMap.put(_Fields.LAST_ACCESS_TIME, new org.apache.thrift.meta_data.FieldMetaData("lastAccessTime", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(cacheBlock_args.class, metaDataMap);
@@ -3234,13 +3251,16 @@ public class BlockWorkerClientService {
 
     public cacheBlock_args(
       long sessionId,
-      long blockId)
+      long blockId,
+      long lastAccessTime)
     {
       this();
       this.sessionId = sessionId;
       setSessionIdIsSet(true);
       this.blockId = blockId;
       setBlockIdIsSet(true);
+      this.lastAccessTime = lastAccessTime;
+      setLastAccessTimeIsSet(true);
     }
 
     /**
@@ -3250,6 +3270,7 @@ public class BlockWorkerClientService {
       __isset_bitfield = other.__isset_bitfield;
       this.sessionId = other.sessionId;
       this.blockId = other.blockId;
+      this.lastAccessTime = other.lastAccessTime;
     }
 
     public cacheBlock_args deepCopy() {
@@ -3262,6 +3283,8 @@ public class BlockWorkerClientService {
       this.sessionId = 0;
       setBlockIdIsSet(false);
       this.blockId = 0;
+      setLastAccessTimeIsSet(false);
+      this.lastAccessTime = 0;
     }
 
     /**
@@ -3322,6 +3345,35 @@ public class BlockWorkerClientService {
       __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __BLOCKID_ISSET_ID, value);
     }
 
+    /**
+     * last access time, -1 means committed by client
+     */
+    public long getLastAccessTime() {
+      return this.lastAccessTime;
+    }
+
+    /**
+     * last access time, -1 means committed by client
+     */
+    public cacheBlock_args setLastAccessTime(long lastAccessTime) {
+      this.lastAccessTime = lastAccessTime;
+      setLastAccessTimeIsSet(true);
+      return this;
+    }
+
+    public void unsetLastAccessTime() {
+      __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __LASTACCESSTIME_ISSET_ID);
+    }
+
+    /** Returns true if field lastAccessTime is set (has been assigned a value) and false otherwise */
+    public boolean isSetLastAccessTime() {
+      return EncodingUtils.testBit(__isset_bitfield, __LASTACCESSTIME_ISSET_ID);
+    }
+
+    public void setLastAccessTimeIsSet(boolean value) {
+      __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __LASTACCESSTIME_ISSET_ID, value);
+    }
+
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case SESSION_ID:
@@ -3340,6 +3392,14 @@ public class BlockWorkerClientService {
         }
         break;
 
+      case LAST_ACCESS_TIME:
+        if (value == null) {
+          unsetLastAccessTime();
+        } else {
+          setLastAccessTime((Long)value);
+        }
+        break;
+
       }
     }
 
@@ -3350,6 +3410,9 @@ public class BlockWorkerClientService {
 
       case BLOCK_ID:
         return Long.valueOf(getBlockId());
+
+      case LAST_ACCESS_TIME:
+        return Long.valueOf(getLastAccessTime());
 
       }
       throw new IllegalStateException();
@@ -3366,6 +3429,8 @@ public class BlockWorkerClientService {
         return isSetSessionId();
       case BLOCK_ID:
         return isSetBlockId();
+      case LAST_ACCESS_TIME:
+        return isSetLastAccessTime();
       }
       throw new IllegalStateException();
     }
@@ -3401,6 +3466,15 @@ public class BlockWorkerClientService {
           return false;
       }
 
+      boolean this_present_lastAccessTime = true;
+      boolean that_present_lastAccessTime = true;
+      if (this_present_lastAccessTime || that_present_lastAccessTime) {
+        if (!(this_present_lastAccessTime && that_present_lastAccessTime))
+          return false;
+        if (this.lastAccessTime != that.lastAccessTime)
+          return false;
+      }
+
       return true;
     }
 
@@ -3417,6 +3491,11 @@ public class BlockWorkerClientService {
       list.add(present_blockId);
       if (present_blockId)
         list.add(blockId);
+
+      boolean present_lastAccessTime = true;
+      list.add(present_lastAccessTime);
+      if (present_lastAccessTime)
+        list.add(lastAccessTime);
 
       return list.hashCode();
     }
@@ -3449,6 +3528,16 @@ public class BlockWorkerClientService {
           return lastComparison;
         }
       }
+      lastComparison = Boolean.valueOf(isSetLastAccessTime()).compareTo(other.isSetLastAccessTime());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetLastAccessTime()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.lastAccessTime, other.lastAccessTime);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
       return 0;
     }
 
@@ -3475,6 +3564,10 @@ public class BlockWorkerClientService {
       if (!first) sb.append(", ");
       sb.append("blockId:");
       sb.append(this.blockId);
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("lastAccessTime:");
+      sb.append(this.lastAccessTime);
       first = false;
       sb.append(")");
       return sb.toString();
@@ -3537,6 +3630,14 @@ public class BlockWorkerClientService {
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
+            case 3: // LAST_ACCESS_TIME
+              if (schemeField.type == org.apache.thrift.protocol.TType.I64) {
+                struct.lastAccessTime = iprot.readI64();
+                struct.setLastAccessTimeIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
             default:
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -3557,6 +3658,9 @@ public class BlockWorkerClientService {
         oprot.writeFieldEnd();
         oprot.writeFieldBegin(BLOCK_ID_FIELD_DESC);
         oprot.writeI64(struct.blockId);
+        oprot.writeFieldEnd();
+        oprot.writeFieldBegin(LAST_ACCESS_TIME_FIELD_DESC);
+        oprot.writeI64(struct.lastAccessTime);
         oprot.writeFieldEnd();
         oprot.writeFieldStop();
         oprot.writeStructEnd();
@@ -3582,19 +3686,25 @@ public class BlockWorkerClientService {
         if (struct.isSetBlockId()) {
           optionals.set(1);
         }
-        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetLastAccessTime()) {
+          optionals.set(2);
+        }
+        oprot.writeBitSet(optionals, 3);
         if (struct.isSetSessionId()) {
           oprot.writeI64(struct.sessionId);
         }
         if (struct.isSetBlockId()) {
           oprot.writeI64(struct.blockId);
         }
+        if (struct.isSetLastAccessTime()) {
+          oprot.writeI64(struct.lastAccessTime);
+        }
       }
 
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, cacheBlock_args struct) throws org.apache.thrift.TException {
         TTupleProtocol iprot = (TTupleProtocol) prot;
-        BitSet incoming = iprot.readBitSet(2);
+        BitSet incoming = iprot.readBitSet(3);
         if (incoming.get(0)) {
           struct.sessionId = iprot.readI64();
           struct.setSessionIdIsSet(true);
@@ -3602,6 +3712,10 @@ public class BlockWorkerClientService {
         if (incoming.get(1)) {
           struct.blockId = iprot.readI64();
           struct.setBlockIdIsSet(true);
+        }
+        if (incoming.get(2)) {
+          struct.lastAccessTime = iprot.readI64();
+          struct.setLastAccessTimeIsSet(true);
         }
       }
     }

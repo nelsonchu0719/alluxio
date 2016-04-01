@@ -80,7 +80,7 @@ public final class StorageDirTest {
 
     mTier = StorageTier.newStorageTier("MEM");
     mDir = StorageDir.newStorageDir(mTier, TEST_DIR_INDEX, TEST_DIR_CAPACITY, mTestDirPath);
-    mBlockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, mDir);
+    mBlockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, mDir, 0);
     mTempBlockMeta =
         new TempBlockMeta(TEST_SESSION_ID, TEST_TEMP_BLOCK_ID, TEST_TEMP_BLOCK_SIZE, mDir);
   }
@@ -273,8 +273,8 @@ public final class StorageDirTest {
     long blockId1 = TEST_BLOCK_ID + 1;
     long blockId2 = TEST_BLOCK_ID + 2;
 
-    BlockMeta blockMeta1 = new BlockMeta(blockId1, TEST_BLOCK_SIZE, mDir);
-    BlockMeta blockMeta2 = new BlockMeta(blockId2, TEST_BLOCK_SIZE, mDir);
+    BlockMeta blockMeta1 = new BlockMeta(blockId1, TEST_BLOCK_SIZE, mDir, 0);
+    BlockMeta blockMeta2 = new BlockMeta(blockId2, TEST_BLOCK_SIZE, mDir, 0);
     mDir.addBlockMeta(blockMeta1);
     mDir.addBlockMeta(blockMeta2);
 
@@ -292,8 +292,8 @@ public final class StorageDirTest {
     long blockId1 = TEST_BLOCK_ID + 1;
     long blockId2 = TEST_BLOCK_ID + 2;
 
-    BlockMeta blockMeta1 = new BlockMeta(blockId1, TEST_BLOCK_SIZE, mDir);
-    BlockMeta blockMeta2 = new BlockMeta(blockId2, TEST_BLOCK_SIZE, mDir);
+    BlockMeta blockMeta1 = new BlockMeta(blockId1, TEST_BLOCK_SIZE, mDir, 0);
+    BlockMeta blockMeta2 = new BlockMeta(blockId2, TEST_BLOCK_SIZE, mDir, 0);
     mDir.addBlockMeta(blockMeta1);
     mDir.addBlockMeta(blockMeta2);
 
@@ -309,7 +309,7 @@ public final class StorageDirTest {
   @Test
   public void addBlockMetaTooBigTest() throws Exception {
     final long bigBlockSize = TEST_DIR_CAPACITY + 1;
-    BlockMeta bigBlockMeta = new BlockMeta(TEST_BLOCK_ID, bigBlockSize, mDir);
+    BlockMeta bigBlockMeta = new BlockMeta(TEST_BLOCK_ID, bigBlockSize, mDir, 0);
     String alias = bigBlockMeta.getBlockLocation().tierAlias();
     mThrown.expect(WorkerOutOfSpaceException.class);
     mThrown.expectMessage(ExceptionMessage.NO_SPACE_FOR_BLOCK_META.getMessage(TEST_BLOCK_ID,
@@ -327,7 +327,7 @@ public final class StorageDirTest {
     mThrown.expect(BlockAlreadyExistsException.class);
     mThrown.expectMessage(ExceptionMessage.ADD_EXISTING_BLOCK.getMessage(TEST_BLOCK_ID, "MEM"));
     mDir.addBlockMeta(mBlockMeta);
-    BlockMeta dupBlockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, mDir);
+    BlockMeta dupBlockMeta = new BlockMeta(TEST_BLOCK_ID, TEST_BLOCK_SIZE, mDir, 0);
     mDir.addBlockMeta(dupBlockMeta);
   }
 
