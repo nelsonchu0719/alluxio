@@ -287,6 +287,8 @@ public final class Constants {
       "alluxio.worker.evictor.remote.evict.unused.time.threshold";
   public static final String WORKER_EVICTOR_REMOTE_EVICT_NUM_LEAST_BLOCK =
       "alluxio.worker.evictor.remote.evict.num.least.significant.block";
+  public static final String WORKER_EVICTOR_REMOTE_EVICT_GLOBAL_LRU =
+      "alluxio.worker.evictor.remote.evict.global.lru";
   public static final String WORKER_TIERED_STORE_LEVELS =
       "alluxio.worker.tieredstore.levels";
   public static final String WORKER_FILESYSTEM_HEARTBEAT_INTERVAL_MS =

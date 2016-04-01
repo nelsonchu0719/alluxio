@@ -95,6 +95,7 @@ public final class TieredBlockStore implements BlockStore {
   private final BlockLockManager mLockManager;
   private final Allocator mAllocator;
   private final Evictor mEvictor;
+  private final boolean mGlobalLRUEnabled;
 
   private final List<BlockStoreEventListener> mBlockStoreEventListeners =
       new ArrayList<BlockStoreEventListener>();
@@ -137,6 +138,8 @@ public final class TieredBlockStore implements BlockStore {
     }
 
     mStorageTierAssoc = new WorkerStorageTierAssoc(mConfiguration);
+
+    mGlobalLRUEnabled = mConfiguration.getBoolean("WORKER_EVICTOR_REMOTE_EVICT_GLOBAL_LRU");
   }
 
   @Override
@@ -251,27 +254,32 @@ public final class TieredBlockStore implements BlockStore {
     BlockStoreLocation loc = commitBlockInternal(sessionId, blockId, lastAccessTime);
     synchronized (mBlockStoreEventListeners) {
       for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
-        if ((listener instanceof LRUEvictor) && lastAccessTime != -1) {
-          mMetadataReadLock.lock();
-          Map<Long, Boolean> oldLRUCache = ((LRUEvictor) listener).getLRUCache();
-          Map<Long, Boolean> newLRUCache = ((LRUEvictor) listener).getEmptyLRUCache();
 
-          List<Long> allBlocks = Lists.newArrayList(oldLRUCache.keySet());
-          int index = 0;
-          for (; index < allBlocks.size(); index++) {
-            long time = mMetaManager.getBlockMeta(allBlocks.get(index)).getLastAccessTime();
-            if (time > lastAccessTime) {
-              break;
+        // insert the block id to the correct position in the LRU priority queue
+        // if this commit comes from a remote eviction
+        if (mGlobalLRUEnabled && (listener instanceof LRUEvictor) && lastAccessTime != -1) {
+          synchronized (LRUEvictor.class) {
+            mMetadataReadLock.lock();
+            Map<Long, Boolean> oldLRUCache = ((LRUEvictor) listener).getLRUCache();
+            Map<Long, Boolean> newLRUCache = ((LRUEvictor) listener).getEmptyLRUCache();
+
+            List<Long> allBlocks = Lists.newArrayList(oldLRUCache.keySet());
+            int index = 0;
+            for (; index < allBlocks.size(); index++) {
+              long time = mMetaManager.getBlockMeta(allBlocks.get(index)).getLastAccessTime();
+              if (time > lastAccessTime) {
+                break;
+              }
+              newLRUCache.put(allBlocks.get(index), true);
             }
-            newLRUCache.put(allBlocks.get(index), true);
-          }
-          newLRUCache.put(blockId, true);
-          for (; index < allBlocks.size(); index++) {
-            newLRUCache.put(allBlocks.get(index), true);
-          }
+            newLRUCache.put(blockId, true);
+            for (; index < allBlocks.size(); index++) {
+              newLRUCache.put(allBlocks.get(index), true);
+            }
 
-          ((LRUEvictor) listener).setLRUCache(newLRUCache);
-          mMetadataReadLock.unlock();
+            ((LRUEvictor) listener).setLRUCache(newLRUCache);
+            mMetadataReadLock.unlock();
+          }
         } else {
           listener.onCommitBlock(sessionId, blockId, loc);
         }
@@ -363,16 +371,19 @@ public final class TieredBlockStore implements BlockStore {
 
   @Override
   public void accessBlock(long sessionId, long blockId) throws BlockDoesNotExistException {
-    mMetadataReadLock.lock();
+    //mMetadataReadLock.lock();
+    mMetadataWriteLock.lock();
     boolean hasBlock = mMetaManager.hasBlockMeta(blockId);
     if (!hasBlock) {
-      mMetadataReadLock.unlock();
+      //mMetadataReadLock.unlock();
+      mMetadataWriteLock.unlock();
       throw new BlockDoesNotExistException(ExceptionMessage.NO_BLOCK_ID_FOUND, blockId);
     }
     // update block last access time.
     BlockMeta meta = mMetaManager.getBlockMeta(blockId);
     meta.updateLastAccessTime();
-    mMetadataReadLock.unlock();
+    //mMetadataReadLock.unlock();
+    mMetadataWriteLock.unlock();
 
     synchronized (mBlockStoreEventListeners) {
       for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
