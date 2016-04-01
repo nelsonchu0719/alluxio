@@ -31,6 +31,7 @@ public final class RemoteWorkerEvictionPolicy {
 
   /**
    * @param threshold remote worker memory utilization threshold
+   * @param globalLRUEnabled if global LRU enabled
    */
   public RemoteWorkerEvictionPolicy(double threshold, boolean globalLRUEnabled) {
     mThreshold = threshold;
@@ -68,8 +69,8 @@ public final class RemoteWorkerEvictionPolicy {
         if (((double) workerInfo.getUsedBytes() / workerInfo.getCapacityBytes() * 100)
                 < mThreshold) {
           // satisfy memory threshold criteria
-          if (!mGlobalLRUEnabled ||
-                  workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
+          if (!mGlobalLRUEnabled
+                  || workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > toMoveSize) {
             // have enough free space
             if (workerInfo.getCapacityBytes() - workerInfo.getUsedBytes() > mostAvailableBytes) {
               // have enough capacity
