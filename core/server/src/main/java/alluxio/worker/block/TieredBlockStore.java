@@ -272,9 +272,9 @@ public final class TieredBlockStore implements BlockStore {
 
           ((LRUEvictor) listener).setLRUCache(newLRUCache);
           mMetadataReadLock.unlock();
-          continue;
+        } else {
+          listener.onCommitBlock(sessionId, blockId, loc);
         }
-        listener.onCommitBlock(sessionId, blockId, loc);
       }
     }
   }
