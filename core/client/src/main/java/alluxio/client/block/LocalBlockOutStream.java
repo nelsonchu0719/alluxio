@@ -65,7 +65,7 @@ public final class LocalBlockOutStream extends BufferedBlockOutStream {
       FileUtils.changeLocalFileToFullPermission(blockPath);
       LOG.info("LocalBlockOutStream created new file block, block path: {}", blockPath);
     } catch (BlockAlreadyExistsException e) {
-      // handle block creation failure(added by Nelson)
+      // handle block creation failure(added by Chi-fan Chu)
       setBlockCreationFailed();
       mContext.releaseWorkerClient(mBlockWorkerClient);
       throw new IOException(e);
@@ -82,6 +82,7 @@ public final class LocalBlockOutStream extends BufferedBlockOutStream {
     }
     mCloser.close();
     if (isBlockCreated()) {
+      // cancel block only if the block was created (added by Chi-fan Chu)
       try {
         mBlockWorkerClient.cancelBlock(mBlockId);
       } catch (AlluxioException e) {

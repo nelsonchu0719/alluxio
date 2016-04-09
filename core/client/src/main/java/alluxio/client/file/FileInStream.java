@@ -345,7 +345,7 @@ public class FileInStream extends InputStream implements BoundedStream, Seekable
         } catch (IOException e) {
           // Failed to promote
           // Might caused by information inconsistency between master and workers due to
-          // delay of BlockReportHeartbeat(Added by Nelson)
+          // delay of BlockReportHeartbeat(Added by Chi-fan Chu)
           LOG.warn("Promotion of block with ID {} failed.", blockId, e);
         }
       }

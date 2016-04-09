@@ -130,7 +130,7 @@ for host in $(cat files/workers); do
 done
 
 # provision
-# No more provision, finish what needed already, added by Nelson
+# No more provision, finish what needed already, added by Chi-fan Chu
  vagrant provision
 
 # IP aliasing

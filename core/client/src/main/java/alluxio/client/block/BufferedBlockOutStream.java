@@ -155,7 +155,7 @@ public abstract class BufferedBlockOutStream extends OutputStream implements Can
   }
 
   /**
-   * @return true if block has been created
+   * @return true if block has been created, added by Chi-fan Chu
    */
   protected boolean isBlockCreated() {
     return mBlockCreatedSucceeded;

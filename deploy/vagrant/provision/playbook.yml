@@ -13,7 +13,7 @@
       sudo: yes
       when: provider == "os"
 
-          # changed by Nelson
+          # changed by Chi-fan Chu
           ## Download, compile, configure all the cluster components.
           #- hosts: AlluxioMaster
           #  tasks:

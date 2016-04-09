@@ -102,6 +102,7 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
     }
     mRemoteWriter.close();
     if (isBlockCreated()) {
+      // cancel block only if the block was created (added by Chi-fan Chu)
       try {
         mBlockWorkerClient.cancelBlock(mBlockId);
       } catch (AlluxioException e) {
@@ -128,6 +129,7 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
       ClientContext.getClientMetrics().incBlocksWrittenRemote(1);
     } else {
       if (isBlockCreated()) {
+        // cancel block only if the block was created (added by Chi-fan Chu)
         try {
           mBlockWorkerClient.cancelBlock(mBlockId);
         } catch (AlluxioException e) {
@@ -155,6 +157,7 @@ public final class RemoteBlockOutStream extends BufferedBlockOutStream {
     try {
       mRemoteWriter.write(b, off, len);
     } catch (BlockAlreadyExistsException e) {
+      // handled block creation failure (added by Chi-fan Chu)
       setBlockCreationFailed();
       throw new IOException(e);
     }

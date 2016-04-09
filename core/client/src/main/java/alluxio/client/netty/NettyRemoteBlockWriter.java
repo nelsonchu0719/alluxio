@@ -48,6 +48,8 @@ public final class NettyRemoteBlockWriter implements RemoteBlockWriter {
   private InetSocketAddress mAddress;
   private long mBlockId;
   private long mSessionId;
+  // Distinguish write stream from client and from worker
+  // Added by Chi-fan Chu
   private int  mIsEviction = 0;
 
   // Total number of bytes written to the remote block.

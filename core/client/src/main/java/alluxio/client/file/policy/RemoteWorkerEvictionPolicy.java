@@ -23,6 +23,8 @@ import javax.annotation.concurrent.ThreadSafe;
  * evicting blocks.
  * The return remote worker must have available size which can hold the evicted blocks.
  * Otherwise, null is returned.
+ *
+ * Added by Chi-fan Chu
  */
 @ThreadSafe
 public final class RemoteWorkerEvictionPolicy {
@@ -41,7 +43,7 @@ public final class RemoteWorkerEvictionPolicy {
   /**
     * Get the remote worker with enough space for eviction.
     * Used by TieredBlockStore.evictBlockInternal.
-    * Added by Nelson
+    * Added by Chi-fan Chu
     * @param workerInfoList the info of the active workers
     * @param excludedAddress the worker with this address is excluded
     * @param toMoveSize the block size to be moved

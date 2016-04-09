@@ -161,7 +161,7 @@ public final class BlockDataServerHandler {
       LOG.error("Error writing remote block : {}", e.getMessage(), e);
       RPCBlockWriteResponse resp;
       // differentiate BlockAlreadyExistsException for wrong worker caching handling.
-      // Added by Nelson
+      // Added by Chi-fan Chu
       if (e instanceof  BlockAlreadyExistsException) {
         resp = RPCBlockWriteResponse
             .createErrorResponse(req, RPCResponse.Status.WRITE_ERROR_BLOCK_EXISTED);

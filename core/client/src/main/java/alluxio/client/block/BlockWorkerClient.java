@@ -337,7 +337,7 @@ public final class BlockWorkerClient extends AbstractClient {
    * @param initialBytes The initial size bytes allocated for the block
    * @return the temporary path of the block
    * @throws IOException if a non-Alluxio exception occurs
-   * @throws BlockAlreadyExistsException if block already exists
+   * @throws BlockAlreadyExistsException if block already exists, added by Chi-fan Chu
    */
   public synchronized String requestBlockLocation(final long blockId, final long initialBytes)
           throws IOException, BlockAlreadyExistsException {

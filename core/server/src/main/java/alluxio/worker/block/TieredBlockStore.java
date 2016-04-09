@@ -715,7 +715,7 @@ public final class TieredBlockStore implements BlockStore {
 
     // 1. remove blocks to make room.
     // Instead of remove blocks, evict block to remote workers
-    // Added by Nelson
+    // Added by Chi-fan Chu
     for (Pair<Long, BlockStoreLocation> blockInfo : plan.toEvict()) {
       try {
         if (!isEviction) {
@@ -733,7 +733,6 @@ public final class TieredBlockStore implements BlockStore {
         continue;
       }
 
-      // TODO(Nelson) update removedBlockLost before delete the block
       synchronized (mBlockStoreEventListeners) {
         for (BlockStoreEventListener listener : mBlockStoreEventListeners) {
           listener.onRemoveBlockByWorker(sessionId, blockInfo.getFirst());
@@ -943,7 +942,7 @@ public final class TieredBlockStore implements BlockStore {
 
   /**
    * Evicts a block to peer worker.
-   * Added by Nelson
+   * Added by Chi-fan Chu
    *
    * @param sessionId session Id
    * @param blockId block Id

@@ -39,7 +39,7 @@ public abstract class RPCResponse extends RPCMessage {
     FILE_DNE(100),
     BLOCK_LOCK_ERROR(101),
     WRITE_ERROR(102),
-    // Used when caching block to worker who already have the block(Added by Nelson).
+    // Used when caching block to worker who already have the block(Added by Chi-fan Chu).
     WRITE_ERROR_BLOCK_EXISTED(103);
 
     private static final String DEFAULT_ERROR_STRING = "Unknown error.";
